@@ -6,6 +6,14 @@ const root = resolve(process.env.WEB_ROOT?.trim() || join(process.cwd(), 'dist')
 const port = Number(process.env.WEB_PORT || 8788);
 const password = () => process.env.SITE_PASSWORD?.trim() || '';
 
+const guardHeaders = {
+  'cache-control': 'private, no-store',
+  'x-content-type-options': 'nosniff',
+  'referrer-policy': 'strict-origin-when-cross-origin',
+  'x-frame-options': 'DENY',
+  'permissions-policy': 'geolocation=(), microphone=()',
+} as const;
+
 function secure(request: Request) {
   return request.headers.get('x-forwarded-proto') === 'https' || new URL(request.url).protocol === 'https:';
 }
@@ -16,17 +24,15 @@ function redirect(location: string, cookie?: string) {
   return new Response(null, { status: 303, headers });
 }
 
-function seal(response: Response) {
-  const headers = new Headers(response.headers);
-  headers.set('cache-control', 'private, no-store');
-  headers.set('x-content-type-options', 'nosniff');
-  headers.set('referrer-policy', 'strict-origin-when-cross-origin');
-  headers.set('x-frame-options', 'DENY');
-  headers.set('permissions-policy', 'geolocation=(), microphone=()');
-  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+function json(data: unknown, status = 200) {
+  return Response.json(data, { status, headers: guardHeaders });
 }
 
-async function staticFile(pathname: string) {
+function text(body: string, status: number) {
+  return new Response(body, { status, headers: { ...guardHeaders, 'content-type': 'text/plain; charset=utf-8' } });
+}
+
+async function staticFile(pathname: string, method: string) {
   const clean = decodeURIComponent(pathname.split('?')[0] || '/');
   const relativePath = clean === '/' ? '' : clean.replace(/^\/+/, '').replace(/\/+$/, '');
   const names = relativePath
@@ -38,21 +44,37 @@ async function staticFile(pathname: string) {
     const rel = relative(root, resolved);
     if (!rel || rel.startsWith('..') || rel.includes(`..${sep}`)) continue;
     const file = Bun.file(resolved);
-    if (await file.exists()) return new Response(file);
+    if (!(await file.exists())) continue;
+    if (method === 'HEAD') {
+      return new Response(null, {
+        status: 200,
+        headers: {
+          ...guardHeaders,
+          'content-type': file.type || 'application/octet-stream',
+          'content-length': String(file.size),
+        },
+      });
+    }
+    return new Response(file, { headers: guardHeaders });
   }
-  return new Response('Not found', { status: 404 });
+  return text('Not found', 404);
 }
 
 async function handleVisit(request: Request) {
-  if (request.method !== 'POST') return new Response(null, { status: 405 });
+  if (request.method !== 'POST') return new Response(null, { status: 405, headers: guardHeaders });
   let body: unknown = {};
   try {
     body = await request.json();
   } catch {
-    return Response.json({ ok: false, error: 'name' }, { status: 400 });
+    return json({ ok: false, error: 'name' }, 400);
   }
   const result = await deliverVisit(body, process.env);
-  return Response.json(result.body, { status: result.status });
+  return json(result.body, result.status);
+}
+
+async function gateAllows(request: Request, sitePassword: string) {
+  const given = cookieValue(request.headers.get('cookie'));
+  return tokensMatch(given, await gateToken(sitePassword));
 }
 
 async function handle(request: Request) {
@@ -74,32 +96,24 @@ async function handle(request: Request) {
   }
 
   if (path === '/api/flags') {
-    if (sitePassword) {
-      const given = cookieValue(request.headers.get('cookie'));
-      if (!tokensMatch(given, await gateToken(sitePassword))) return new Response('Закрыто', { status: 401 });
-    }
-    return seal(Response.json(flagsFromEnv(process.env)));
+    if (sitePassword && !(await gateAllows(request, sitePassword))) return text('Закрыто', 401);
+    return json(flagsFromEnv(process.env));
   }
 
   if (path === '/api/visit') {
-    if (sitePassword) {
-      const given = cookieValue(request.headers.get('cookie'));
-      if (!tokensMatch(given, await gateToken(sitePassword))) return new Response('Закрыто', { status: 401 });
-    }
-    return seal(await handleVisit(request));
+    if (sitePassword && !(await gateAllows(request, sitePassword))) return text('Закрыто', 401);
+    return handleVisit(request);
   }
 
-  if (isOpenPath(path)) return seal(await staticFile(path));
+  if (isOpenPath(path)) return staticFile(path, request.method);
 
   if (!sitePassword) return redirect('/enter?error=closed');
-
-  const given = cookieValue(request.headers.get('cookie'));
-  if (tokensMatch(given, await gateToken(sitePassword))) return seal(await staticFile(path));
+  if (await gateAllows(request, sitePassword)) return staticFile(path, request.method);
 
   if (request.method === 'GET' || request.method === 'HEAD') {
     return redirect(`/enter?next=${encodeURIComponent(`${path}${url.search}`)}`);
   }
-  return new Response('Закрыто', { status: 401 });
+  return text('Закрыто', 401);
 }
 
 Bun.serve({
