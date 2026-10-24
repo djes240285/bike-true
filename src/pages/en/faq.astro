@@ -1,0 +1,15 @@
+---
+import Simple from '../../views/Simple.astro';
+import { dict } from '../../i18n';
+const t = dict.en;
+---
+<Simple locale="en" path="/faq" title={t.faq.title}>
+  <div class="faq-list">
+    {t.faq.items.map((item, index) => (
+      <details class="faq-item" open={index === 0}>
+        <summary>{item.q}</summary>
+        <p>{item.a}</p>
+      </details>
+    ))}
+  </div>
+</Simple>

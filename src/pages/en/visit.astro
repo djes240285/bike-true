@@ -1,0 +1,10 @@
+---
+import VisitForm from '../../components/VisitForm';
+import Simple from '../../views/Simple.astro';
+import { dict } from '../../i18n';
+const t = dict.en;
+---
+<Simple locale="en" path="/visit" title={t.visit.title}>
+  <p class="lead">{t.visit.lead}</p>
+  <VisitForm client:load locale="en" />
+</Simple>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" role="img" aria-label="BikeTrue A">
+  <rect width="120" height="120" fill="#fffdf8"/>
+  <!-- rear wheel -->
+  <circle cx="34" cy="78" r="18" stroke="#1c1917" stroke-width="2.2"/>
+  <circle cx="34" cy="78" r="2.4" fill="#1c1917"/>
+  <!-- front wheel -->
+  <circle cx="88" cy="78" r="18" stroke="#1c1917" stroke-width="2.2"/>
+  <circle cx="88" cy="78" r="2.4" fill="#1c1917"/>
+  <!-- frame -->
+  <path d="M34 78 L54 58 L72 42 L88 78" stroke="#1c1917" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M54 58 L48 36" stroke="#1c1917" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M40 34 H58" stroke="#1c1917" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M72 42 L66 34 H80" stroke="#1c1917" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- crank down + amber arc (knee angle cue) -->
+  <path d="M54 58 L54 78" stroke="#d97706" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M48 78 H60" stroke="#d97706" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M54 66 A12 12 0 0 1 64 74" stroke="#d97706" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+</svg>

@@ -1,0 +1,12 @@
+---
+import Analyzer from '../components/Analyzer';
+import AngleCue from '../components/AngleCue.astro';
+import Simple from '../views/Simple.astro';
+import { dict } from '../i18n';
+const t = dict.ru;
+---
+<Simple locale="ru" path="/analyze" title={t.analyze.title}>
+  <p class="lead">{t.analyze.lead}</p>
+  <AngleCue label="колено" />
+  <Analyzer client:only="react" locale="ru" />
+</Simple>

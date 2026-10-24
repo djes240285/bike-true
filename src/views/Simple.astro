@@ -1,0 +1,11 @@
+---
+import Base from '../layouts/Base.astro';
+import { dict, type Locale } from '../i18n';
+
+interface Props { locale: Locale; path: string; title: string; }
+const { locale, path, title } = Astro.props;
+---
+<Base locale={locale} path={path}>
+  <h1>{title}</h1>
+  <slot />
+</Base>

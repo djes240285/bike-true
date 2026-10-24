@@ -1,0 +1,21 @@
+[build]
+  command = "bun run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22.12.0"
+  BUN_VERSION = "1.1.38"
+
+[functions]
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/api/flags"
+  to = "/.netlify/functions/flags"
+  status = 200
+
+[[redirects]]
+  from = "/api/visit"
+  to = "/.netlify/functions/visit"
+  status = 200
+

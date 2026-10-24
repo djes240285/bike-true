@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" role="img" aria-label="BikeTrue C">
+  <rect width="120" height="120" fill="#fffdf8"/>
+  <rect x="14" y="14" width="92" height="92" rx="22" fill="#1c1917"/>
+  <!-- rear -->
+  <circle cx="42" cy="74" r="14" stroke="#f3efe6" stroke-width="2"/>
+  <circle cx="42" cy="74" r="2" fill="#f3efe6"/>
+  <!-- front amber -->
+  <circle cx="80" cy="74" r="14" stroke="#d97706" stroke-width="2.2"/>
+  <circle cx="80" cy="74" r="2" fill="#d97706"/>
+  <!-- frame -->
+  <path d="M42 74 L56 60 L70 48 L80 74" stroke="#f3efe6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M56 60 L52 42" stroke="#f3efe6" stroke-width="2" stroke-linecap="round"/>
+  <path d="M45 40 H60" stroke="#f3efe6" stroke-width="2" stroke-linecap="round"/>
+  <path d="M70 48 L66 40 H78" stroke="#f3efe6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

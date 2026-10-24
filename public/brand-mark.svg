@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="BikeTrue bicycle mark">
+  <rect width="512" height="512" fill="#fffdf8"/>
+  <circle cx="256" cy="256" r="232" fill="#1c1917"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="153" cy="316" r="76" stroke="#d97706" stroke-width="12"/>
+    <circle cx="359" cy="316" r="76" stroke="#f3efe6" stroke-width="12"/>
+    <g stroke="#f3efe6" stroke-width="14">
+      <path d="M153 316 215 214 253 316 153 316"/>
+      <path d="M215 214 296 214 253 316"/>
+      <path d="M296 214 359 316"/>
+      <path d="M201 193h29"/>
+      <path d="M288 197h28"/>
+      <path d="M215 193v21"/>
+      <path d="M296 197v17"/>
+    </g>
+    <circle cx="253" cy="316" r="10" fill="#f3efe6" stroke="none"/>
+  </g>
+</svg>

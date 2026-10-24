@@ -1,0 +1,18 @@
+---
+interface Props {
+  label: string;
+}
+const { label } = Astro.props;
+---
+
+<div class="angle-scene" aria-hidden="true">
+  <svg viewBox="0 0 220 180">
+    <path class="bone" d="M40 36 L78 96 L46 156" />
+    <path class="bone arm" d="M40 36 L120 78" />
+    <circle cx="40" cy="36" r="5" />
+    <circle cx="78" cy="96" r="5" />
+    <circle cx="46" cy="156" r="5" />
+    <path class="angle-arc" d="M78 78 A28 28 0 0 1 58 112" />
+    <text x="96" y="108">{label}</text>
+  </svg>
+</div>

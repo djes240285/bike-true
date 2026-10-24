@@ -1,0 +1,18 @@
+---
+import ShootScene from '../../components/ShootScene.astro';
+import Simple from '../../views/Simple.astro';
+import { dict } from '../../i18n';
+const t = dict.en;
+---
+<Simple locale="en" path="/how-to-shoot" title={t.how.title}>
+  <p class="lead">{t.how.lead}</p>
+  <ShootScene label="A person aims a phone on a tripod at a bicycle from the side. The lens sits at saddle height, with the whole bike in frame." />
+  <div class="grid">
+    {t.how.items.map((item) => (
+      <article class="card">
+        <strong>{item.title}</strong>
+        <p>{item.text}</p>
+      </article>
+    ))}
+  </div>
+</Simple>

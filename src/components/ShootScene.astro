@@ -1,0 +1,47 @@
+---
+interface Props {
+  label: string;
+}
+const { label } = Astro.props;
+---
+
+<div class="scene-wrap">
+  <video
+    class="shoot-film"
+    poster="/media/how-to-shoot.jpg"
+    preload="none"
+    muted
+    loop
+    playsinline
+    width="1280"
+    height="720"
+    aria-label={label}
+    data-src="/media/how-to-shoot.mp4"
+  ></video>
+</div>
+
+<script>
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const attach = () => {
+    if (reduce) return;
+    document.querySelectorAll('.shoot-film').forEach((node) => {
+      if (!(node instanceof HTMLVideoElement)) return;
+      const src = node.dataset.src;
+      if (!src || node.currentSrc) return;
+      node.src = src;
+      node.play().catch(() => {});
+    });
+  };
+
+  const whenIdle = () => {
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(attach, { timeout: 2000 });
+      return;
+    }
+    attach();
+  };
+
+  if (document.readyState === 'complete') whenIdle();
+  else addEventListener('load', whenIdle, { once: true });
+</script>

@@ -1,0 +1,8 @@
+---
+import Simple from '../../views/Simple.astro';
+import { dict } from '../../i18n';
+const t = dict.en;
+---
+<Simple locale="en" path="/about" title={t.about.title}>
+  {t.about.paragraphs.map((paragraph) => <p class="lead">{paragraph}</p>)}
+</Simple>

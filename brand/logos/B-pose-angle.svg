@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" role="img" aria-label="BikeTrue B">
+  <rect width="120" height="120" fill="#fffdf8"/>
+  <!-- soft bike hint -->
+  <circle cx="36" cy="86" r="16" stroke="#a8a29e" stroke-width="1.6"/>
+  <circle cx="86" cy="86" r="16" stroke="#a8a29e" stroke-width="1.6"/>
+  <path d="M36 86 L58 70 L78 52 L86 86" stroke="#a8a29e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M50 40 H66" stroke="#a8a29e" stroke-width="1.6" stroke-linecap="round"/>
+  <!-- pose: hip  knee  ankle -->
+  <path d="M58 46 L72 68 L58 94" stroke="#1c1917" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M58 46 L84 56" stroke="#1c1917" stroke-width="2.2" stroke-linecap="round" opacity="0.55"/>
+  <circle cx="58" cy="46" r="4.2" fill="#d97706"/>
+  <circle cx="72" cy="68" r="4.8" fill="#d97706"/>
+  <circle cx="58" cy="94" r="4.2" fill="#d97706"/>
+  <!-- knee angle arc -->
+  <path d="M72 56 A16 16 0 0 1 62 80" stroke="#d97706" stroke-width="2" stroke-linecap="round"/>
+</svg>

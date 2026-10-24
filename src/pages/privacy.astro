@@ -1,0 +1,8 @@
+---
+import Simple from '../views/Simple.astro';
+import { dict } from '../i18n';
+const t = dict.ru;
+---
+<Simple locale="ru" path="/privacy" title={t.privacy.title}>
+  {t.privacy.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+</Simple>

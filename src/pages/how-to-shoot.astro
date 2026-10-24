@@ -1,0 +1,18 @@
+---
+import ShootScene from '../components/ShootScene.astro';
+import Simple from '../views/Simple.astro';
+import { dict } from '../i18n';
+const t = dict.ru;
+---
+<Simple locale="ru" path="/how-to-shoot" title={t.how.title}>
+  <p class="lead">{t.how.lead}</p>
+  <ShootScene label="Человек наводит телефон на штативе на велосипед сбоку. Объектив на высоте седла, велик целиком в кадре." />
+  <div class="grid">
+    {t.how.items.map((item) => (
+      <article class="card">
+        <strong>{item.title}</strong>
+        <p>{item.text}</p>
+      </article>
+    ))}
+  </div>
+</Simple>

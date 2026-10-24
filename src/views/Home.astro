@@ -1,0 +1,139 @@
+---
+import Base from '../layouts/Base.astro';
+import { dict, type Locale } from '../i18n';
+import { pathFor } from '../lib/paths';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = dict[locale];
+const angles = ['knee', 'back', 'arm', 'hip'] as const;
+const sample = [
+  ['knee', '146°', '68%'],
+  ['back', '42°', '46%'],
+  ['arm', '158°', '72%'],
+  ['hip', '62°', '58%'],
+] as const;
+const benefitIcons = [
+  'M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10Z',
+  'M13 2 4 14h7l-1 8 9-12h-7l1-8Z',
+  'M3 17c3-6 6-9 9-9s5 2 9 0M3 12c3-4 6-6 9-6',
+];
+---
+
+<Base locale={locale} path="/">
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="kicker">{t.home.kicker}</p>
+      <h1>{t.home.title}</h1>
+      <p class="lead">{t.home.lead}</p>
+      <div class="actions">
+        <a class="button" href={pathFor(locale, '/analyze')}>{t.home.primary}</a>
+        <a class="button ghost" href={pathFor(locale, '/how-to-shoot')}>{t.home.secondary}</a>
+      </div>
+      <ul class="proof">
+        {t.home.proof.map((item) => <li>{item}</li>)}
+      </ul>
+    </div>
+    <aside class="meter" aria-hidden="true">
+      <header>
+        <span class="live"><i></i>{t.home.sample}</span>
+      </header>
+      {sample.map(([key, value, width]) => (
+        <div class="meter-row">
+          <span>{t.angles[key].label}</span>
+          <b>{value}</b>
+          <i><span style={`--p:${width}`}></span></i>
+        </div>
+      ))}
+    </aside>
+  </section>
+
+  <section class="band band-white" data-reveal>
+    <div class="band-inner">
+      <header class="section-head">
+        <p class="kicker">{t.home.benefitsKicker}</p>
+        <h2>{t.home.benefitsTitle}</h2>
+      </header>
+      <div class="benefits">
+        {t.home.benefits.map((item, index) => (
+          <article class="benefit">
+            <span class="benefit-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22">
+                <path d={benefitIcons[index]} fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+            <strong>{item.title}</strong>
+            <p>{item.text}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="band" data-reveal>
+    <div class="band-inner">
+      <header class="section-head">
+        <p class="kicker">{t.home.stepsKicker}</p>
+        <h2>{t.home.stepsTitle}</h2>
+      </header>
+      <ol class="steps">
+        {t.home.steps.map((step, index) => (
+          <li class="step">
+            <em>0{index + 1}</em>
+            <strong>{step.title}</strong>
+            <p>{step.text}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="band band-dark" data-reveal>
+    <div class="band-inner">
+      <header class="section-head">
+        <p class="kicker">{t.home.anglesKicker}</p>
+        <h2>{t.home.anglesTitle}</h2>
+        <p class="section-lead">{t.home.anglesLead}</p>
+      </header>
+      <div class="angle-grid">
+        {angles.map((key) => (
+          <article class="angle">
+            <em>{t.angles[key].where}</em>
+            <strong>{t.angles[key].label}</strong>
+            <b>{t.angles[key].range}</b>
+          </article>
+        ))}
+      </div>
+      <p class="note">{t.home.anglesNote}</p>
+    </div>
+  </section>
+
+  <section class="band" data-reveal>
+    <div class="band-inner faq-teaser">
+      <header class="section-head">
+        <p class="kicker">{t.home.faqKicker}</p>
+        <h2>{t.home.faqTitle}</h2>
+        <a class="text-link" href={pathFor(locale, '/faq')}>{t.home.faqAll} →</a>
+      </header>
+      <div class="faq-list">
+        {t.faq.items.slice(0, 3).map((item) => (
+          <details class="faq-item">
+            <summary>{item.q}</summary>
+            <p>{item.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="cta" data-reveal>
+    <h2>{t.home.ctaTitle}</h2>
+    <p>{t.home.ctaText}</p>
+    <div class="actions">
+      <a class="button" href={pathFor(locale, '/visit')}>{t.home.ctaPrimary}</a>
+      <a class="button ghost" href={pathFor(locale, '/analyze')}>{t.home.ctaSecondary}</a>
+    </div>
+  </section>
+</Base>

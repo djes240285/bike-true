@@ -1,0 +1,90 @@
+---
+import '../styles/global.css';
+import '@fontsource-variable/inter';
+import { dict, type Locale } from '../i18n';
+import { otherLocale, pathFor } from '../lib/paths';
+
+interface Props {
+  locale: Locale;
+  path: string;
+}
+
+const { locale, path } = Astro.props;
+const t = dict[locale];
+const other = otherLocale(locale);
+const links = [
+  ['/how-to-shoot', t.nav.how],
+  ['/analyze', t.nav.analyze],
+  ['/visit', t.nav.visit],
+  ['/about', t.nav.about],
+  ['/faq', t.nav.faq],
+] as const;
+---
+
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{t.metaTitle}</title>
+    <meta name="description" content={t.metaDescription} />
+    <link rel="icon" href="/favicon.svg" />
+    <script is:inline>document.documentElement.classList.add('js');</script>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="top">
+        <a class="brand" href={pathFor(locale, '/')}>
+          <svg class="brand-mark" width="28" height="28" viewBox="0 0 512 512" aria-hidden="true">
+            <circle cx="256" cy="256" r="232" fill="#1c1917"></circle>
+            <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="153" cy="316" r="76" stroke="#d97706" stroke-width="12"></circle>
+              <circle cx="359" cy="316" r="76" stroke="#f3efe6" stroke-width="12"></circle>
+              <g stroke="#f3efe6" stroke-width="14">
+                <path d="M153 316 215 214 253 316 153 316"></path>
+                <path d="M215 214 296 214 253 316"></path>
+                <path d="M296 214 359 316"></path>
+                <path d="M201 193h29"></path>
+                <path d="M288 197h28"></path>
+                <path d="M215 193v21"></path>
+                <path d="M296 197v17"></path>
+              </g>
+              <circle cx="253" cy="316" r="10" fill="#f3efe6" stroke="none"></circle>
+            </g>
+          </svg>
+          {t.brand}
+        </a>
+        <nav class="nav">
+          {links.map(([href, label]) => (
+            <a href={pathFor(locale, href)} aria-current={path === href ? 'page' : undefined}>{label}</a>
+          ))}
+        </nav>
+        <a class="switch" href={pathFor(other, path)}>{t.switchLabel}</a>
+      </header>
+      <main>
+        <slot />
+      </main>
+      <footer>
+        <p>{t.footer}</p>
+        <a href={pathFor(locale, '/privacy')}>{t.privacy.title}</a>
+      </footer>
+    </div>
+    <script>
+      const blocks = document.querySelectorAll('[data-reveal]');
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              entry.target.classList.add('is-in');
+              observer.unobserve(entry.target);
+            }
+          },
+          { rootMargin: '0px 0px -10% 0px' },
+        );
+        blocks.forEach((block) => observer.observe(block));
+      } else {
+        blocks.forEach((block) => block.classList.add('is-in'));
+      }
+    </script>
+  </body>
+</html>
