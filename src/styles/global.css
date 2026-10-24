@@ -177,14 +177,37 @@ label.button input { display: none; }
 }
 .fine { margin: 10px 0 0; font-size: 14px; }
 
+.hero-visual {
+  position: relative;
+  justify-self: end;
+  width: min(100%, 440px);
+  padding: 36px 0 0 36px;
+}
+.hero-video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 32px;
+  background: #e9dcc6;
+  box-shadow: 0 30px 80px rgba(120, 72, 18, 0.22), 0 0 0 1px rgba(28, 25, 23, 0.06);
+}
 .meter {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 28px;
-  box-shadow: var(--shadow);
-  padding: 22px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 220px;
+  background: rgba(255, 253, 248, 0.82);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 22px;
+  box-shadow: 0 18px 50px rgba(28, 25, 23, 0.18);
+  padding: 14px 16px 6px;
   animation: breezeFloat 8s ease-in-out infinite;
 }
+.meter .meter-row { padding: 8px 0; font-size: 13px; }
+.meter .meter-row b { font-size: 19px; }
 .meter header {
   display: flex;
   justify-content: space-between;
@@ -605,6 +628,9 @@ footer a { text-underline-offset: 3px; }
   .benefits { gap: 28px; }
   .cta { padding: 44px 22px; border-radius: 28px; }
   .hero { min-height: 0; gap: 28px; }
+  .hero-visual { justify-self: stretch; width: 100%; padding: 0; }
+  .hero-video { aspect-ratio: 4 / 5; border-radius: 28px; }
+  .meter { left: 12px; top: 12px; width: 190px; }
   .top {
     height: auto;
     padding: calc(12px + env(safe-area-inset-top)) 16px 12px;

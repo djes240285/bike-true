@@ -36,18 +36,38 @@ const benefitIcons = [
         {t.home.proof.map((item) => <li>{item}</li>)}
       </ul>
     </div>
-    <aside class="meter" aria-hidden="true">
-      <header>
-        <span class="live"><i></i>{t.home.sample}</span>
-      </header>
-      {sample.map(([key, value, width]) => (
-        <div class="meter-row">
-          <span>{t.angles[key].label}</span>
-          <b>{value}</b>
-          <i><span style={`--p:${width}`}></span></i>
-        </div>
-      ))}
+    <aside class="hero-visual" aria-hidden="true">
+      <video
+        class="hero-video"
+        src="/motion/hero-autumn.mp4"
+        poster="/motion/hero-autumn.jpg"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+      ></video>
+      <div class="meter">
+        <header>
+          <span class="live"><i></i>{t.home.sample}</span>
+        </header>
+        {sample.map(([key, value, width]) => (
+          <div class="meter-row">
+            <span>{t.angles[key].label}</span>
+            <b>{value}</b>
+            <i><span style={`--p:${width}`}></span></i>
+          </div>
+        ))}
+      </div>
     </aside>
+    <script is:inline>
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.querySelectorAll('.hero-video').forEach((video) => {
+          video.removeAttribute('autoplay');
+          video.pause();
+        });
+      }
+    </script>
   </section>
 
   <section class="band band-white" data-reveal>
