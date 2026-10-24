@@ -22,12 +22,17 @@ export type VisitResult =
   | { ok: true; text: string }
   | { ok: false; error: 'name' | 'phone' | 'photo' };
 
-const PHOTO_KEYS = ['photo', 'image', 'file', 'dataUrl', 'dataurl'];
+export const PHOTO_KEYS = ['photo', 'image', 'file', 'dataUrl', 'dataurl'];
+
+export function hasPhotoField(body: unknown): boolean {
+  if (!body || typeof body !== 'object') return false;
+  return PHOTO_KEYS.some((key) => key in (body as Record<string, unknown>));
+}
 
 export function parseVisit(body: unknown): VisitResult {
   if (!body || typeof body !== 'object') return { ok: false, error: 'name' };
   const record = body as Record<string, unknown>;
-  if (PHOTO_KEYS.some((key) => key in record)) return { ok: false, error: 'photo' };
+  if (hasPhotoField(body)) return { ok: false, error: 'photo' };
 
   const name = typeof record.name === 'string' ? record.name.trim() : '';
   const phone = typeof record.phone === 'string' ? record.phone.trim() : '';
