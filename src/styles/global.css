@@ -140,6 +140,49 @@ img, canvas { max-width: 100%; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.auth-pop { position: relative; }
+.auth-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 6;
+  min-width: 148px;
+  padding: 6px;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 16px 36px rgba(28, 25, 23, 0.14), inset 0 0 0 1px var(--line);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
+}
+.auth-menu::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -12px;
+  height: 12px;
+}
+.auth-pop:hover .auth-menu,
+.auth-pop:focus-within .auth-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+.auth-menu button {
+  width: 100%;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  padding: 8px 12px;
+  text-align: left;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.auth-menu button:hover { background: #f6efe4; }
 .corner a.auth-link:hover,
 .corner a.auth-link[aria-current="page"] { color: var(--ink); background: white; }
 .switch {
@@ -1340,11 +1383,17 @@ html[data-theme="dark"] .top {
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
 }
 html[data-theme="dark"] .nav a { color: #efe6dc; }
-html[data-theme="dark"] .corner a.auth-link.is-user {
+html[data-theme="dark"] .corner a.auth-link.is-user,
+html[data-theme="dark"] .auth-menu {
   background: #3f3933;
   color: var(--ink);
   box-shadow: inset 0 0 0 1px rgba(247, 242, 234, 0.14);
 }
+html[data-theme="dark"] .auth-menu {
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28), inset 0 0 0 1px rgba(247, 242, 234, 0.14);
+}
+html[data-theme="dark"] .auth-menu button { color: var(--ink); }
+html[data-theme="dark"] .auth-menu button:hover { background: #4a433c; color: #fffaf3; }
 html[data-theme="dark"] .nav a:hover,
 html[data-theme="dark"] .corner a.auth-link:hover { background: #4a433c; color: #fffaf3; }
 html[data-theme="dark"] .nav a[aria-current="page"],

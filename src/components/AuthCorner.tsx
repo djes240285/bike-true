@@ -26,22 +26,36 @@ export default function AuthCorner({ locale }: { locale: Locale }) {
     };
   }, []);
 
+  async function logout() {
+    try {
+      await cabinetFetch('/auth/logout', { method: 'POST' });
+    } catch {
+      /* сессия сбросится при обновлении, если сервер успел стереть куку */
+    }
+    location.reload();
+  }
+
   if (state.kind === 'in') {
     return (
-      <a className="auth-link is-user" href={pathFor(locale, '/account')} aria-current={here.endsWith('/account') ? 'page' : undefined}>
-        {state.avatar ? (
-          <img
-            className="auth-face"
-            src={state.avatar}
-            alt=""
-            referrerPolicy="no-referrer"
-            onError={() => setState((current) => (current.kind === 'in' ? { ...current, avatar: null } : current))}
-          />
-        ) : (
-          <span className="auth-mark" aria-hidden="true">{initials(state.name)}</span>
-        )}
-        <span className="auth-name">{state.name}</span>
-      </a>
+      <div className="auth-pop">
+        <a className="auth-link is-user" href={pathFor(locale, '/account')} aria-current={here.endsWith('/account') ? 'page' : undefined}>
+          {state.avatar ? (
+            <img
+              className="auth-face"
+              src={state.avatar}
+              alt=""
+              referrerPolicy="no-referrer"
+              onError={() => setState((current) => (current.kind === 'in' ? { ...current, avatar: null } : current))}
+            />
+          ) : (
+            <span className="auth-mark" aria-hidden="true">{initials(state.name)}</span>
+          )}
+          <span className="auth-name">{state.name}</span>
+        </a>
+        <div className="auth-menu">
+          <button type="button" onClick={logout}>{t.logout}</button>
+        </div>
+      </div>
     );
   }
 
