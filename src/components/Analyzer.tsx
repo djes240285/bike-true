@@ -7,6 +7,7 @@ import { pathFor } from '../lib/paths';
 import { crowd, readFrame, toPixels, type AngleReading, type Frame, type Point } from '../lib/reading';
 import { idealBottom, idealTop, jointsOf, moved } from '../lib/target';
 import PoseStage, { type Scene } from './PoseStage';
+import SaveReading from './SaveReading';
 const WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm';
 const MODEL =
   'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
@@ -193,6 +194,7 @@ export default function Analyzer({ locale }: { locale: Locale }) {
             <div className="actions">
               <a className="button" href={pathFor(locale, '/visit')}>{t.analyze.toVisit}</a>
             </div>
+            <SaveReading locale={locale} reading={reading} hadTop={hadTop} />
           </>
         ) : null}
       </div>
@@ -239,6 +241,7 @@ export default function Analyzer({ locale }: { locale: Locale }) {
           <button className="button ghost" type="button" onClick={reset}>{t.analyze.reset}</button>
         ) : null}
       </div>
+      {hasReading ? <SaveReading locale={locale} reading={reading} hadTop={hadTop} /> : null}
     </div>
   );
 }
