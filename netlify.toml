@@ -1,3 +1,4 @@
+# Проверочная публикация: секреты остаются в панели Netlify, не в репозитории.
 [build]
   command = "bun run build"
   publish = "dist"
