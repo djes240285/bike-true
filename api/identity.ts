@@ -5,13 +5,40 @@ import { identities, users } from './schema';
 
 export type Provider = 'google' | 'yandex' | 'telegram';
 
-export async function signIn(input: {
+type SignInInput = {
   provider: Provider;
   providerUserId: string;
   email: string | null;
   name: string;
   sessionUserId: number | null;
-}): Promise<{ ok: true; userId: number } | { ok: false; error: 'taken' }> {
+};
+type SignInResult = { ok: true; userId: number } | { ok: false; error: 'taken' };
+
+function isDuplicate(error: unknown): boolean {
+  let current: unknown = error;
+  for (let depth = 0; depth < 4 && current && typeof current === 'object'; depth += 1) {
+    const item = current as { errno?: unknown; code?: unknown; cause?: unknown };
+    if (item.errno === 1062 || item.code === 'ER_DUP_ENTRY') return true;
+    current = item.cause;
+  }
+  return false;
+}
+
+export async function signIn(input: SignInInput): Promise<SignInResult> {
+  try {
+    return await signInOnce(input);
+  } catch (error) {
+    if (!isDuplicate(error)) throw error;
+  }
+  try {
+    return await signInOnce(input);
+  } catch (error) {
+    if (isDuplicate(error)) return { ok: false, error: 'taken' };
+    throw error;
+  }
+}
+
+async function signInOnce(input: SignInInput): Promise<SignInResult> {
   const db = database();
   const email = input.email?.trim().toLowerCase() || null;
   const name = input.name.trim().slice(0, 80) || 'Велосипедист';

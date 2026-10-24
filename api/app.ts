@@ -119,6 +119,8 @@ export function createApp() {
     await next();
   });
 
+  app.onError((_error, c) => c.json({ ok: false, error: 'provider' }, 503));
+
   app.get('/auth/config', (c) => c.json({ telegramUsername: process.env.TELEGRAM_BOT_USERNAME?.trim() || null }));
 
   for (const provider of ['google', 'yandex'] as const) {
