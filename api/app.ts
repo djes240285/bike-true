@@ -152,7 +152,10 @@ export function createApp() {
     await next();
   });
 
-  app.onError((_error, c) => c.json({ ok: false, error: 'provider' }, 503));
+  app.onError((error, c) => {
+    console.error(error);
+    return c.json({ ok: false, error: 'provider' }, 503);
+  });
 
   app.get('/auth/config', (c) => c.json({ telegramUsername: process.env.TELEGRAM_BOT_USERNAME?.trim() || null }));
 
@@ -235,7 +238,13 @@ export function createApp() {
 
   app.post('/auth/logout', async (c) => {
     const token = getCookie(c, 'bt_session');
-    if (token) await database().delete(sessions).where(eq(sessions.tokenHash, hashSessionToken(token)));
+    if (token) {
+      try {
+        await database().delete(sessions).where(eq(sessions.tokenHash, hashSessionToken(token)));
+      } catch (error) {
+        console.error(error);
+      }
+    }
     c.header('Set-Cookie', clearSessionCookie());
     return c.json({ ok: true });
   });
