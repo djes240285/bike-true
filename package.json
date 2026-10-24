@@ -16,8 +16,9 @@
     "preview": "astro preview",
     "test": "bun test src/lib",
     "icons": "bun scripts/render-icons.ts",
-    "api": "bun run api/index.ts",
-    "api:migrate": "drizzle-kit migrate"
+    "api": "bun api/index.ts",
+    "api:migrate": "drizzle-kit migrate",
+    "web": "bun api/web.ts"
   },
   "dependencies": {
     "@astrojs/react": "^5.0.6",
