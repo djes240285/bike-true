@@ -15,7 +15,9 @@
     "build": "astro build",
     "preview": "astro preview",
     "test": "bun test src/lib",
-    "icons": "bun scripts/render-icons.ts"
+    "icons": "bun scripts/render-icons.ts",
+    "api": "bun run api/index.ts",
+    "api:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "@astrojs/react": "^5.0.6",
@@ -24,12 +26,16 @@
     "@fontsource/fraunces": "^5.2.8",
     "@mediapipe/tasks-vision": "^0.10.22",
     "astro": "^6.2.2",
+    "drizzle-orm": "^0.45.4",
+    "hono": "^4.13.13",
+    "mysql2": "^3.24.6",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",
     "@types/react": "^19.2.15",
-    "@types/react-dom": "^19.2.3"
+    "@types/react-dom": "^19.2.3",
+    "drizzle-kit": "^0.31.11"
   }
 }
