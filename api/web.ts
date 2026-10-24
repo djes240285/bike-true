@@ -29,35 +29,24 @@ function json(data: unknown, status = 200) {
 }
 
 function text(body: string, status: number) {
-  return new Response(body, { status, headers: { ...guardHeaders, 'content-type': 'text/plain; charset=utf-8' } });
+  return new Response(body, {
+    status,
+    headers: { ...guardHeaders, 'content-type': 'text/plain; charset=utf-8' },
+  });
 }
 
-async function staticFile(pathname: string, method: string) {
-  const clean = decodeURIComponent(pathname.split('?')[0] || '/');
-  const relativePath = clean === '/' ? '' : clean.replace(/^\/+/, '').replace(/\/+$/, '');
-  const names = relativePath
-    ? [relativePath, `${relativePath}.html`, join(relativePath, 'index.html')]
-    : ['index.html'];
+async function enterPage() {
+  const resolved = resolve(join(root, 'enter', 'index.html'));
+  const rel = relative(root, resolved);
+  if (!rel || rel.startsWith('..') || rel.includes(`..${sep}`)) return text('Not found', 404);
+  const file = Bun.file(resolved);
+  if (!(await file.exists())) return text('Not found', 404);
+  return new Response(file, { headers: { ...guardHeaders, 'content-type': 'text/html; charset=utf-8' } });
+}
 
-  for (const name of names) {
-    const resolved = resolve(join(root, name));
-    const rel = relative(root, resolved);
-    if (!rel || rel.startsWith('..') || rel.includes(`..${sep}`)) continue;
-    const file = Bun.file(resolved);
-    if (!(await file.exists())) continue;
-    if (method === 'HEAD') {
-      return new Response(null, {
-        status: 200,
-        headers: {
-          ...guardHeaders,
-          'content-type': file.type || 'application/octet-stream',
-          'content-length': String(file.size),
-        },
-      });
-    }
-    return new Response(file, { headers: guardHeaders });
-  }
-  return text('Not found', 404);
+async function gateAllows(request: Request, sitePassword: string) {
+  const given = cookieValue(request.headers.get('cookie'));
+  return tokensMatch(given, await gateToken(sitePassword));
 }
 
 async function handleVisit(request: Request) {
@@ -72,27 +61,33 @@ async function handleVisit(request: Request) {
   return json(result.body, result.status);
 }
 
-async function gateAllows(request: Request, sitePassword: string) {
-  const given = cookieValue(request.headers.get('cookie'));
-  return tokensMatch(given, await gateToken(sitePassword));
-}
-
 async function handle(request: Request) {
   const url = new URL(request.url);
   const path = url.pathname;
   const sitePassword = password();
 
-  if (request.method === 'POST' && (path === '/enter' || path === '/enter/')) {
-    const form = await request.formData();
-    const decision = await loginDecision(
-      sitePassword,
-      String(form.get('password') || ''),
-      String(form.get('next') || '/'),
-    );
-    if (!decision.ok) {
-      return redirect(`/enter?next=${encodeURIComponent(decision.next)}&error=${decision.error}`);
+  // nginx auth_request: 204 пускает, 401 отправляет на /enter
+  if (path === '/_gate') {
+    if (!sitePassword) return new Response(null, { status: 401 });
+    if (await gateAllows(request, sitePassword)) return new Response(null, { status: 204 });
+    return new Response(null, { status: 401 });
+  }
+
+  if (path === '/enter' || path === '/enter/') {
+    if (request.method === 'POST') {
+      const form = await request.formData();
+      const decision = await loginDecision(
+        sitePassword,
+        String(form.get('password') || ''),
+        String(form.get('next') || '/'),
+      );
+      if (!decision.ok) {
+        return redirect(`/enter?next=${encodeURIComponent(decision.next)}&error=${decision.error}`);
+      }
+      return redirect(decision.next, gateCookie(decision.token, secure(request)));
     }
-    return redirect(decision.next, gateCookie(decision.token, secure(request)));
+    if (request.method === 'GET' || request.method === 'HEAD') return enterPage();
+    return new Response(null, { status: 405, headers: guardHeaders });
   }
 
   if (path === '/api/flags') {
@@ -105,15 +100,8 @@ async function handle(request: Request) {
     return handleVisit(request);
   }
 
-  if (isOpenPath(path)) return staticFile(path, request.method);
-
-  if (!sitePassword) return redirect('/enter?error=closed');
-  if (await gateAllows(request, sitePassword)) return staticFile(path, request.method);
-
-  if (request.method === 'GET' || request.method === 'HEAD') {
-    return redirect(`/enter?next=${encodeURIComponent(`${path}${url.search}`)}`);
-  }
-  return text('Закрыто', 401);
+  if (isOpenPath(path)) return text('ok', 200);
+  return text('Not found', 404);
 }
 
 Bun.serve({
@@ -122,4 +110,4 @@ Bun.serve({
   fetch: handle,
 });
 
-console.log(`BikeTrue web on 127.0.0.1:${port}, root ${root}`);
+console.log(`BikeTrue gate on 127.0.0.1:${port}`);
