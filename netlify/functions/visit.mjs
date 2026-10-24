@@ -20,6 +20,6 @@ export default async (request) => {
 };
 
 function readEnv(name) {
-  if (typeof Netlify !== 'undefined' && Netlify.env) return Netlify.env.get(name) || '';
-  return process.env[name] || '';
+  const fromNetlify = typeof Netlify !== 'undefined' && Netlify.env ? Netlify.env.get(name) : '';
+  return (fromNetlify || process.env[name] || '').trim();
 }
