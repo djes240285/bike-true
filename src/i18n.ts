@@ -8,7 +8,7 @@ export type Dict = {
   metaTitle: string;
   metaDescription: string;
   brand: string;
-  nav: { how: string; analyze: string; visit: string; about: string; faq: string };
+  nav: { how: string; analyze: string; visit: string; about: string; faq: string; account: string };
   switchLabel: string;
   home: {
     kicker: string;
@@ -114,6 +114,56 @@ export type Dict = {
   about: { title: string; paragraphs: string[] };
   faq: { title: string; items: { q: string; a: string }[] };
   privacy: { title: string; paragraphs: string[] };
+  account: {
+    title: string;
+    leadOut: string;
+    leadIn: string;
+    google: string;
+    yandex: string;
+    telegram: string;
+    connect: string;
+    logout: string;
+    delete: string;
+    deleteConfirm: string;
+    name: string;
+    save: string;
+    saved: string;
+    unavailable: string;
+    body: string;
+    bikes: string;
+    readings: string;
+    rider: string;
+    child: string;
+    teen: string;
+    adult: string;
+    height: string;
+    inseam: string;
+    inseamHelp: string;
+    bikeName: string;
+    fit: string;
+    city: string;
+    endurance: string;
+    race: string;
+    mtb: string;
+    crank: string;
+    saddle: string;
+    stem: string;
+    drop: string;
+    bikeNote: string;
+    addBike: string;
+    noBike: string;
+    empty: string;
+    remove: string;
+    studioTitle: string;
+    studioDenied: string;
+    toAccount: string;
+    saveReading: string;
+    pickBike: string;
+    error: string;
+    limit: string;
+    taken: string;
+    noEmail: string;
+  };
   pwa: {
     notice: string;
     noticeOk: string;
@@ -132,7 +182,7 @@ export const dict: Record<Locale, Dict> = {
     metaTitle: 'BikeTrue — байкфит по фото',
     metaDescription: 'Посадка на велосипеде по двум фото сбоку. Колено, спина, руки, бедро — и запись на живую настройку.',
     brand: 'BikeTrue',
-    nav: { how: 'Как снять', analyze: 'Разбор', visit: 'Записаться', about: 'Кто мы', faq: 'Вопросы' },
+    nav: { how: 'Как снять', analyze: 'Разбор', visit: 'Записаться', about: 'Кто мы', faq: 'Вопросы', account: 'Кабинет' },
     switchLabel: 'EN',
     home: {
       kicker: 'Байкфит по фото',
@@ -140,7 +190,7 @@ export const dict: Record<Locale, Dict> = {
       lead: 'Два фото сбоку — и видно, где велосипед спорит с тобой: колено, спина, руки, бедро. Остальное докрутим вживую.',
       primary: 'Разобрать фото',
       secondary: 'Как снять',
-      proof: ['2 фото сбоку', '4 угла', 'Без регистрации'],
+      proof: ['2 фото сбоку', '4 угла', 'Можно без входа'],
       sample: 'Пример разбора',
       benefitsKicker: 'Зачем',
       benefitsTitle: 'Хорошая посадка чувствуется сразу',
@@ -292,7 +342,7 @@ export const dict: Record<Locale, Dict> = {
       items: [
         { q: 'Это заменяет фитера?', a: 'Нет. Это быстрый первый взгляд. Тонкие вещи — шипы, ширину седла, ощущения — докручиваем вживую.' },
         { q: 'Что нужно для фото?', a: 'Телефон, вид справа, ровный свет и шатун внизу. Станок помогает, но стена тоже подойдёт.' },
-        { q: 'Куда девается снимок?', a: 'Никуда. Разбор идёт прямо в браузере, фото не покидает твоё устройство.' },
+        { q: 'Куда девается снимок?', a: 'Никуда. Разбор идёт прямо в браузере, фото не покидает твоё устройство. Если сохранить разбор в кабинет, на сервер уходят только градусы, без снимка.' },
         { q: 'Зачем второй кадр?', a: 'Угол бедра виден, только когда нога вверху. По одному кадру его не посчитать честно.' },
       ],
     },
@@ -303,7 +353,58 @@ export const dict: Record<Locale, Dict> = {
         'Последние углы, фото разбора и черновик записи остаются на этом устройстве, чтобы не начинать заново. Стереть их можно в настройках браузера, в данных сайта.',
         'Если сайт закрыт паролем, браузер хранит техническую куки входа. Рекламных и аналитических куки нет.',
         'Из записи мы получаем только то, что ты сам написал, и используем это, чтобы с тобой связаться.',
+        'При сохранении на сервер уходят имя, почта провайдера, мерки, размеры велосипеда и градусы. Фото остаётся на устройстве. Кука сессии стоит на хосте кабинета.',
       ],
+    },
+    account: {
+      title: 'Кабинет',
+      leadOut: 'Войди, чтобы сохранить мерки, велосипеды и разборы.',
+      leadIn: 'Здесь мерки, велосипеды и сохранённые разборы.',
+      google: 'Войти через Google',
+      yandex: 'Войти через Яндекс',
+      telegram: 'Войти через Telegram',
+      connect: 'Подключить',
+      logout: 'Выйти',
+      delete: 'Удалить кабинет',
+      deleteConfirm: 'Удалить кабинет и все сохранённые данные?',
+      name: 'Имя',
+      save: 'Сохранить',
+      saved: 'Сохранено',
+      unavailable: 'Сохранение временно недоступно. Разбор фото работает как раньше.',
+      body: 'Мерки',
+      bikes: 'Велосипеды',
+      readings: 'Разборы',
+      rider: 'Кто едет',
+      child: 'Ребёнок',
+      teen: 'Подросток',
+      adult: 'Взрослый',
+      height: 'Рост, см',
+      inseam: 'Шов книгой, см',
+      inseamHelp: 'Встань спиной к стене в обуви, в которой будешь кататься. Зажми книгу между ног, плотно к промежности, корешок горизонтально. Померяй от верхней грани книги до пола.',
+      bikeName: 'Название',
+      fit: 'Посадка',
+      city: 'Городская',
+      endurance: 'Универсальная',
+      race: 'Гоночная',
+      mtb: 'Горная',
+      crank: 'Шатун, мм',
+      saddle: 'Высота седла от каретки, мм',
+      stem: 'Вынос, мм',
+      drop: 'Падение руля, мм',
+      bikeNote: 'Размеры сохранены. На углы с фото они пока не влияют.',
+      addBike: 'Добавить велосипед',
+      noBike: 'Без велосипеда',
+      empty: 'Пока пусто',
+      remove: 'Удалить',
+      studioTitle: 'Разборы людей',
+      studioDenied: 'Этот экран для мастеров.',
+      toAccount: 'В свой кабинет',
+      saveReading: 'Сохранить в кабинет',
+      pickBike: 'К какому велосипеду',
+      error: 'Не получилось сохранить. Проверь числа и попробуй ещё раз.',
+      limit: 'Лимит уже заполнен.',
+      taken: 'Этот вход уже привязан к другому кабинету.',
+      noEmail: 'Почта не пришла от входа',
     },
     pwa: {
       notice: 'На устройстве остаются углы, фото разбора и черновик записи. Если сайт закрыт паролем — ещё техническая куки входа. Рекламы и слежки нет.',
@@ -321,7 +422,7 @@ export const dict: Record<Locale, Dict> = {
     metaTitle: 'BikeTrue — bike fit from a photo',
     metaDescription: 'Bike position from two side photos. Knee, back, arms, hip — then a hands-on fitting.',
     brand: 'BikeTrue',
-    nav: { how: 'How to shoot', analyze: 'Analysis', visit: 'Book', about: 'About', faq: 'FAQ' },
+    nav: { how: 'How to shoot', analyze: 'Analysis', visit: 'Book', about: 'About', faq: 'FAQ', account: 'Account' },
     switchLabel: 'RU',
     home: {
       kicker: 'Bike fit from a photo',
@@ -329,7 +430,7 @@ export const dict: Record<Locale, Dict> = {
       lead: 'Two side photos show where the bike is fighting you: knee, back, arms, hip. The rest we fine-tune in person.',
       primary: 'Analyze a photo',
       secondary: 'How to shoot',
-      proof: ['2 side photos', '4 angles', 'No sign-up'],
+      proof: ['2 side photos', '4 angles', 'No account needed'],
       sample: 'Sample reading',
       benefitsKicker: 'Why',
       benefitsTitle: 'A good fit is felt right away',
@@ -481,7 +582,7 @@ export const dict: Record<Locale, Dict> = {
       items: [
         { q: 'Does this replace a fitter?', a: 'No. It’s a quick first look. The finer things — cleats, saddle width, how it feels — we tune in person.' },
         { q: 'What do I need for the photo?', a: 'A phone, a right-side view, even light, and the crank down. A trainer helps, but a wall works too.' },
-        { q: 'Where does the picture go?', a: 'Nowhere. The analysis runs in your browser; the photo never leaves your device.' },
+        { q: 'Where does the picture go?', a: 'Nowhere. The analysis runs in your browser; the photo never leaves your device. If you save a reading to your account, only the degrees go to the server, without the photo.' },
         { q: 'Why a second photo?', a: 'The hip angle only shows when the leg is up. One frame can’t measure it honestly.' },
       ],
     },
@@ -492,7 +593,58 @@ export const dict: Record<Locale, Dict> = {
         'The latest angles, analysis photos, and booking draft stay on this device so you don’t start over. Clear them in the browser’s site data.',
         'If the site is password-locked, the browser keeps a sign-in cookie. There are no advertising or analytics cookies.',
         'From a booking we only get what you write yourself, and use it to get in touch.',
+        'When you save, your name, the provider email, measurements, bike sizes and degrees go to the server. The photo stays on the device. The session cookie is set on the account host.',
       ],
+    },
+    account: {
+      title: 'Account',
+      leadOut: 'Sign in to save measurements, bikes and readings.',
+      leadIn: 'Measurements, bikes and saved readings are here.',
+      google: 'Sign in with Google',
+      yandex: 'Sign in with Yandex',
+      telegram: 'Sign in with Telegram',
+      connect: 'Connect',
+      logout: 'Sign out',
+      delete: 'Delete account',
+      deleteConfirm: 'Delete the account and all saved data?',
+      name: 'Name',
+      save: 'Save',
+      saved: 'Saved',
+      unavailable: 'Saving is temporarily unavailable. Photo analysis still works as before.',
+      body: 'Measurements',
+      bikes: 'Bikes',
+      readings: 'Readings',
+      rider: 'Who is riding',
+      child: 'Child',
+      teen: 'Teen',
+      adult: 'Adult',
+      height: 'Height, cm',
+      inseam: 'Book inseam, cm',
+      inseamHelp: 'Stand with your back to the wall in the riding shoes you will use. Clamp a book between your legs, snug against the crotch, spine horizontal. Measure from the top edge of the book to the floor.',
+      bikeName: 'Name',
+      fit: 'Position',
+      city: 'City',
+      endurance: 'All-round',
+      race: 'Race',
+      mtb: 'Mountain',
+      crank: 'Crank, mm',
+      saddle: 'Saddle height from the bottom bracket, mm',
+      stem: 'Stem, mm',
+      drop: 'Bar drop, mm',
+      bikeNote: 'Sizes are saved. They do not affect the angles from the photo yet.',
+      addBike: 'Add a bike',
+      noBike: 'No bike',
+      empty: 'Nothing here yet',
+      remove: 'Delete',
+      studioTitle: 'Readings of people',
+      studioDenied: 'This screen is for fitters.',
+      toAccount: 'To your account',
+      saveReading: 'Save to account',
+      pickBike: 'Which bike',
+      error: 'Could not save. Check the numbers and try again.',
+      limit: 'The limit is already full.',
+      taken: 'This sign-in is already linked to another account.',
+      noEmail: 'No email came from sign-in',
     },
     pwa: {
       notice: 'This device keeps your angles, analysis photos, and booking draft. A sign-in cookie is used only if the site is locked. No ads or tracking.',
