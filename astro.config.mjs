@@ -1,4 +1,3 @@
-import { loadEnv } from 'vite';
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import { writeServiceWorker } from './scripts/service-worker.mjs';
@@ -26,10 +25,8 @@ export default defineConfig({
         configureServer(server) {
           server.middlewares.use(async (req, res, next) => {
             const url = req.url?.split('?')[0];
-            const env = {
-              ...process.env,
-              ...loadEnv(server.config.mode, process.cwd(), ''),
-            };
+            const { envForRequest } = await server.ssrLoadModule('/src/lib/dev-env.ts');
+            const env = envForRequest(server.config.mode, process.cwd(), process.env);
             const password = env.SITE_PASSWORD?.trim() || '';
             if (password) {
               const gate = await server.ssrLoadModule('/src/lib/gate.ts');
