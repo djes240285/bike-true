@@ -1,0 +1,9 @@
+---
+import Cabinet from '../components/Cabinet';
+import Simple from '../views/Simple.astro';
+import { dict } from '../i18n';
+const t = dict.ru.account;
+---
+<Simple locale="ru" path="/studio" title={t.studioTitle}>
+  <Cabinet client:only="react" locale="ru" screen="studio" />
+</Simple>

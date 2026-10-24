@@ -1,0 +1,9 @@
+---
+import Cabinet from '../../../components/Cabinet';
+import Simple from '../../../views/Simple.astro';
+import { dict } from '../../../i18n';
+const t = dict.en.account;
+---
+<Simple locale="en" path="/account/bikes" title={t.bikes}>
+  <Cabinet client:only="react" locale="en" screen="bikes" />
+</Simple>
