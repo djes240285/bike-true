@@ -9,9 +9,11 @@ export const CORRIDORS: Record<AngleKey, { min: number; max: number }> = {
   arm: { min: 150, max: 165 },
 };
 
+/** Сравниваем то же целое число, которое видит человек. */
 export function band(value: number, min: number, max: number): Band {
-  if (value < min) return 'low';
-  if (value > max) return 'high';
+  const shown = Math.round(value);
+  if (shown < min) return 'low';
+  if (shown > max) return 'high';
   return 'in';
 }
 

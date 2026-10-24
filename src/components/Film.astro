@@ -5,27 +5,23 @@ interface Props {
 const { label } = Astro.props;
 ---
 
-<div class="scene-wrap">
-  <video
-    class="shoot-film"
-    poster="/media/how-to-shoot.jpg"
-    preload="none"
-    muted
-    loop
-    playsinline
-    width="1280"
-    height="720"
-    aria-label={label}
-    data-src="/media/how-to-shoot.mp4"
-  ></video>
-</div>
+<video
+  class="motion"
+  poster="/motion/how-to-shoot.jpg"
+  preload="none"
+  muted
+  loop
+  playsinline
+  aria-label={label}
+  data-src="/motion/how-to-shoot.mp4"
+></video>
 
 <script>
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const attach = () => {
     if (reduce) return;
-    document.querySelectorAll('.shoot-film').forEach((node) => {
+    document.querySelectorAll('.motion').forEach((node) => {
       if (!(node instanceof HTMLVideoElement)) return;
       const src = node.dataset.src;
       if (!src || node.currentSrc) return;

@@ -3,6 +3,8 @@
   "type": "module",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
+  "author": "Evgenii Zhukov",
   "packageManager": "bun@1.1.38",
   "engines": {
     "node": ">=22.12.0",

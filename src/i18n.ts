@@ -39,7 +39,20 @@ export type Dict = {
   angles: Record<'knee' | 'back' | 'arm' | 'hip', { label: string; range: string; where: string }>;
   advice: Record<'knee' | 'back' | 'arm' | 'hip', BandCopy>;
   disclaimer: string;
-  how: { title: string; lead: string; items: Card[] };
+  how: {
+    title: string;
+    lead: string;
+    film: string;
+    meters: string;
+    camera: { title: string; text: string };
+    frame: { title: string; checks: { title: string; text: string }[] };
+    shots: {
+      title: string;
+      down: { title: string; text: string };
+      up: { title: string; text: string };
+    };
+    next: string;
+  };
   analyze: {
     title: string;
     lead: string;
@@ -58,6 +71,19 @@ export type Dict = {
     reset: string;
     toVisit: string;
     browser: string;
+    bottomHint: string;
+    upload: string;
+    dropHere: string;
+    example: string;
+    measures: string;
+    notVisible: string;
+    ghostNow: string;
+    ghostTarget: string;
+    ghostLegend: string;
+    ghostAllIn: string;
+    saveImage: string;
+    saveVideo: string;
+    recording: string;
   };
   visit: {
     title: string;
@@ -163,21 +189,39 @@ export const dict: Record<Locale, Dict> = {
     how: {
       title: 'Как снять',
       lead: 'Пять минут подготовки — и цифрам можно верить.',
-      items: [
-        { title: 'Вид справа', text: 'Камера смотрит на ведущую звезду, объектив на высоте седла, три метра до велика.' },
-        { title: 'Весь силуэт', text: 'В кадре велик и человек целиком, с полями по краям. Одежда облегающая.' },
-        { title: 'Ровный свет', text: 'Без окна за спиной и без жёсткой тени поперёк колена.' },
-        { title: 'Шатун внизу', text: 'Строго на 6 часов. Здесь видно колено, спину и руку.' },
-        { title: 'Шатун вверху', text: 'Та же точка, шатун на 12 часов. Этот кадр нужен для бедра.' },
-        { title: 'Один в кадре', text: 'Второй человек сбивает скелет. Помощника — за камеру.' },
-      ],
+      film: 'Человек наводит телефон на штативе на велосипед сбоку. На экране виден весь велик.',
+      meters: '3 м',
+      camera: {
+        title: 'Вид справа',
+        text: 'Камера смотрит на ведущую звезду, объектив на высоте седла, три метра до велика.',
+      },
+      frame: {
+        title: 'Проверь кадр',
+        checks: [
+          { title: 'Весь силуэт', text: 'В кадре велик и человек целиком, с полями по краям. Одежда облегающая.' },
+          { title: 'Ровный свет', text: 'Без окна за спиной и без жёсткой тени поперёк колена.' },
+          { title: 'Один в кадре', text: 'Второй человек сбивает скелет. Помощника — за камеру.' },
+        ],
+      },
+      shots: {
+        title: 'Два кадра',
+        down: { title: 'Шатун внизу', text: 'Строго на 6 часов. Здесь видно колено, спину и руку.' },
+        up: { title: 'Шатун вверху', text: 'Та же точка, шатун на 12 часов. Этот кадр нужен для бедра.' },
+      },
+      next: 'Дальше — разобрать кадр',
     },
     analyze: {
       title: 'Разбор',
       lead: 'Загрузи фото сбоку — углы посчитаются прямо здесь, на твоём устройстве.',
-      bottom: 'Кадр A · шатун внизу',
-      top: 'Кадр B · шатун вверху',
-      topOptional: 'Можно пропустить — тогда без бедра.',
+      bottom: 'Педаль внизу',
+      top: 'Педаль вверху',
+      bottomHint: 'Педаль со стороны камеры — на 6 часов, нога почти прямая.',
+      topOptional: 'Та же точка, педаль на 12 часов. Можно пропустить — тогда без бедра.',
+      upload: 'Загрузить фото',
+      dropHere: 'или перетащи сюда',
+      example: 'Пример',
+      measures: 'Посчитаем',
+      notVisible: 'не видно на кадре',
       pick: 'Выбрать фото',
       replace: 'Другое фото',
       measure: 'Посчитать',
@@ -190,6 +234,13 @@ export const dict: Record<Locale, Dict> = {
       reset: 'Начать заново',
       toVisit: 'Записаться на посадку',
       browser: 'Этому экрану нужен свежий браузер.',
+      ghostNow: 'Сейчас',
+      ghostTarget: 'Ориентир',
+      ghostLegend: 'Оранжевый — как ты сидишь сейчас. Белый пунктир — куда тянуться.',
+      ghostAllIn: 'Все углы в ориентире — двигать нечего.',
+      saveImage: 'Сохранить картинку',
+      saveVideo: 'Сохранить видео',
+      recording: 'Записываю…',
     },
     visit: {
       title: 'Запись на посадку',
@@ -314,21 +365,39 @@ export const dict: Record<Locale, Dict> = {
     how: {
       title: 'How to shoot',
       lead: 'Five minutes of setup — and the numbers can be trusted.',
-      items: [
-        { title: 'Right side', text: 'The camera sees the chainring, lens at saddle height, about three metres away.' },
-        { title: 'Whole silhouette', text: 'Bike and rider fully in frame, with margin. Close-fitting clothes.' },
-        { title: 'Even light', text: 'No window behind you and no hard shadow across the knee.' },
-        { title: 'Crank down', text: 'Straight to 6 o’clock. This shows knee, back and arm.' },
-        { title: 'Crank up', text: 'Same spot, crank at 12 o’clock. This frame is for the hip.' },
-        { title: 'One in frame', text: 'A second person confuses the skeleton. Helper goes behind the camera.' },
-      ],
+      film: 'A person aims a phone on a tripod at a bicycle from the side. The whole bike is on the screen.',
+      meters: '3 m',
+      camera: {
+        title: 'Right side',
+        text: 'The camera sees the chainring, lens at saddle height, about three metres away.',
+      },
+      frame: {
+        title: 'Check the frame',
+        checks: [
+          { title: 'Whole silhouette', text: 'Bike and rider fully in frame, with margin. Close-fitting clothes.' },
+          { title: 'Even light', text: 'No window behind you and no hard shadow across the knee.' },
+          { title: 'One in frame', text: 'A second person confuses the skeleton. Helper goes behind the camera.' },
+        ],
+      },
+      shots: {
+        title: 'Two frames',
+        down: { title: 'Crank down', text: 'Straight to 6 o’clock. This shows knee, back and arm.' },
+        up: { title: 'Crank up', text: 'Same spot, crank at 12 o’clock. This frame is for the hip.' },
+      },
+      next: 'Next — read the photo',
     },
     analyze: {
       title: 'Analysis',
       lead: 'Upload a side photo — the angles are computed right here, on your device.',
-      bottom: 'Frame A · crank down',
-      top: 'Frame B · crank up',
-      topOptional: 'You can skip it — then no hip.',
+      bottom: 'Pedal down',
+      top: 'Pedal up',
+      bottomHint: 'Camera-side pedal at 6 o’clock, leg almost straight.',
+      topOptional: 'Same spot, pedal at 12 o’clock. Optional — without it, no hip.',
+      upload: 'Upload a photo',
+      dropHere: 'or drop it here',
+      example: 'Example',
+      measures: 'We measure',
+      notVisible: 'not visible in the frame',
       pick: 'Choose a photo',
       replace: 'Another photo',
       measure: 'Measure',
@@ -341,6 +410,13 @@ export const dict: Record<Locale, Dict> = {
       reset: 'Start over',
       toVisit: 'Book a fitting',
       browser: 'This screen needs a recent browser.',
+      ghostNow: 'Now',
+      ghostTarget: 'Target',
+      ghostLegend: 'Amber is how you sit now. The white dashed line is where to aim.',
+      ghostAllIn: 'Every angle is within the guide — nothing to move.',
+      saveImage: 'Save image',
+      saveVideo: 'Save video',
+      recording: 'Recording…',
     },
     visit: {
       title: 'Book a fitting',

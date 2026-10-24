@@ -1,0 +1,240 @@
+---
+const mark = {
+  wheels: [
+    { cx: 153, cy: 316, stroke: '#d97706' },
+    { cx: 359, cy: 316, stroke: '#f3efe6' },
+  ],
+};
+---
+
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Вход · BikeTrue</title>
+    <link rel="icon" href="/favicon.svg" />
+    <style is:inline>
+      :root {
+        --paper: #fffdf8;
+        --ink: #1c1917;
+        --muted: #78716c;
+        --line: rgba(28, 25, 23, 0.08);
+        --accent: #d97706;
+        --accent-deep: #b45309;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: Inter, "Segoe UI", sans-serif;
+        font-size: 17px;
+        line-height: 1.5;
+        background:
+          radial-gradient(900px 420px at 80% -10%, rgba(251, 191, 36, 0.28), transparent 60%),
+          radial-gradient(700px 380px at -10% 20%, rgba(254, 243, 199, 0.75), transparent 55%),
+          var(--paper);
+      }
+      .gate {
+        width: min(460px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 8vh 0 48px;
+      }
+      .scene {
+        position: relative;
+        height: 280px;
+        margin-bottom: -8px;
+      }
+      .scene svg { width: 100%; height: 100%; overflow: visible; }
+      .halo {
+        fill: none;
+        stroke: rgba(217, 119, 6, 0.45);
+        stroke-width: 1.5;
+        stroke-dasharray: 7 12;
+        transform-origin: 180px 168px;
+        animation: spin 32s linear infinite;
+      }
+      .sweep {
+        fill: none;
+        stroke: var(--accent);
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-dasharray: 440;
+        stroke-dashoffset: 440;
+        animation: draw 7s ease-in-out infinite alternate;
+      }
+      .runner {
+        fill: var(--ink);
+        offset-path: path("M48 214 A 132 132 0 1 1 312 214");
+        offset-distance: 0%;
+        animation: travel 7s ease-in-out infinite alternate;
+      }
+      .bike { transform-origin: 180px 210px; animation: breeze 6.5s ease-in-out infinite; }
+      .readout {
+        position: absolute;
+        left: 0;
+        top: 6px;
+        margin: 0;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.82);
+        box-shadow: 0 10px 30px rgba(120, 72, 20, 0.08);
+        font-size: 13px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--accent-deep);
+      }
+      .readout b { font-weight: 640; letter-spacing: -0.03em; }
+      .card {
+        position: relative;
+        padding: 28px 26px 24px;
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.86);
+        box-shadow: 0 24px 60px rgba(120, 72, 20, 0.1);
+        animation: rise 0.7s ease both;
+      }
+      .card.is-wrong { animation: shake 0.45s ease; }
+      .kicker {
+        margin: 0 0 8px;
+        color: var(--accent-deep);
+        font-size: 13px;
+        font-weight: 640;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(36px, 6vw, 48px);
+        line-height: 1.02;
+        letter-spacing: -0.045em;
+        font-weight: 600;
+      }
+      .lead { margin: 0 0 22px; color: #44403c; }
+      form { display: grid; gap: 14px; }
+      label { display: grid; gap: 6px; font-size: 14px; color: var(--muted); }
+      input {
+        font: inherit;
+        color: var(--ink);
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: white;
+        outline: none;
+      }
+      input:focus {
+        border-color: rgba(217, 119, 6, 0.45);
+        box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.35);
+      }
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 18px;
+        background: var(--ink);
+        color: white;
+        font: inherit;
+        font-size: 15px;
+        font-weight: 560;
+        cursor: pointer;
+      }
+      button:hover { background: #292524; }
+      .error {
+        margin: 0;
+        color: var(--accent-deep);
+        font-size: 14px;
+      }
+      .note { margin: 14px 0 0; color: var(--muted); font-size: 13px; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @keyframes draw { to { stroke-dashoffset: 40; } }
+      @keyframes travel { to { offset-distance: 100%; } }
+      @keyframes breeze {
+        0%, 100% { transform: rotate(-2.2deg); }
+        50% { transform: rotate(2deg); }
+      }
+      @keyframes rise {
+        from { opacity: 0; transform: translateY(14px); }
+        to { opacity: 1; transform: none; }
+      }
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-7px); }
+        75% { transform: translateX(7px); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .halo, .sweep, .runner, .bike, .card { animation: none; }
+        .sweep { stroke-dashoffset: 80; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="gate">
+      <div class="scene" aria-hidden="true">
+        <svg viewBox="0 0 360 320">
+          <circle class="halo" cx="180" cy="168" r="132"></circle>
+          <path class="sweep" d="M48 214 A 132 132 0 1 1 312 214"></path>
+          <circle class="runner" cx="0" cy="0" r="6"></circle>
+          <g class="bike" transform="translate(46, -6) scale(0.52)">
+            <circle cx="256" cy="256" r="232" fill="#1c1917"></circle>
+            {mark.wheels.map((wheel) => (
+              <circle cx={wheel.cx} cy={wheel.cy} r="76" fill="none" stroke={wheel.stroke} stroke-width="12"></circle>
+            ))}
+            <g fill="none" stroke="#f3efe6" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M153 316 215 214 253 316 153 316"></path>
+              <path d="M215 214 296 214 253 316"></path>
+              <path d="M296 214 359 316"></path>
+              <path d="M201 193h29"></path>
+              <path d="M288 197h28"></path>
+              <path d="M215 193v21"></path>
+              <path d="M296 197v17"></path>
+            </g>
+            <circle cx="253" cy="316" r="10" fill="#f3efe6"></circle>
+          </g>
+        </svg>
+        <p class="readout">колено · <b data-angle>128°</b></p>
+      </div>
+      <section class="card">
+        <p class="kicker">Закрытый просмотр</p>
+        <h1>Сюда пока только свои</h1>
+        <p class="lead">Один пароль на двоих. После него открывается BikeTrue.</p>
+        <form method="post" action="/enter">
+          <input type="hidden" name="next" value="/" />
+          <label>
+            Пароль
+            <input type="password" name="password" autocomplete="current-password" required autofocus />
+          </label>
+          <p class="error" id="gate-error" hidden></p>
+          <button type="submit">Войти</button>
+        </form>
+        <p class="note">Случайная ссылка дальше этой страницы не ведёт.</p>
+      </section>
+    </main>
+    <script is:inline>
+      const params = new URLSearchParams(location.search);
+      const nextField = document.querySelector('[name="next"]');
+      const next = params.get('next');
+      if (next && nextField instanceof HTMLInputElement && next.startsWith('/') && !next.startsWith('//')) {
+        nextField.value = next;
+      }
+      const error = params.get('error');
+      const note = document.getElementById('gate-error');
+      if (note && (error === 'wrong' || error === 'closed')) {
+        note.hidden = false;
+        note.textContent = error === 'closed'
+          ? 'Пароль для входа ещё не включён.'
+          : 'Пароль не подошёл.';
+        document.querySelector('.card')?.classList.add('is-wrong');
+      }
+      const angle = document.querySelector('[data-angle]');
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (angle && !reduce) {
+        const start = performance.now();
+        const tick = (now) => {
+          const wave = (1 - Math.cos(((now - start) / 7000) * Math.PI * 2)) / 2;
+          angle.textContent = Math.round(128 + wave * 24) + '°';
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }
+    </script>
+  </body>
+</html>

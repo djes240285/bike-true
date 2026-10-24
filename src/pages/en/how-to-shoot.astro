@@ -1,18 +1,13 @@
 ---
-import ShootScene from '../../components/ShootScene.astro';
+import Film from '../../components/Film.astro';
+import ShootSteps from '../../components/ShootSteps.astro';
 import Simple from '../../views/Simple.astro';
 import { dict } from '../../i18n';
+import { pathFor } from '../../lib/paths';
 const t = dict.en;
 ---
 <Simple locale="en" path="/how-to-shoot" title={t.how.title}>
   <p class="lead">{t.how.lead}</p>
-  <ShootScene label="A person aims a phone on a tripod at a bicycle from the side. The lens sits at saddle height, with the whole bike in frame." />
-  <div class="grid">
-    {t.how.items.map((item) => (
-      <article class="card">
-        <strong>{item.title}</strong>
-        <p>{item.text}</p>
-      </article>
-    ))}
-  </div>
+  <Film label={t.how.film} />
+  <ShootSteps how={t.how} nextHref={pathFor('en', '/analyze')} />
 </Simple>
