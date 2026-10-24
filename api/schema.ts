@@ -4,6 +4,7 @@ export const users = mysqlTable('users', {
   id: int('id').primaryKey().autoincrement(),
   name: varchar('name', { length: 80 }).notNull(),
   email: varchar('email', { length: 255 }),
+  avatarUrl: varchar('avatar_url', { length: 512 }),
   role: mysqlEnum('role', ['rider', 'fitter']).notNull().default('rider'),
   createdAt: datetime('created_at', { mode: 'date' }).notNull(),
 }, (table) => [uniqueIndex('users_email').on(table.email)]);
@@ -29,6 +30,7 @@ export const oauthStates = mysqlTable('oauth_states', {
   provider: mysqlEnum('provider', ['google', 'yandex']).notNull(),
   userId: int('user_id').references(() => users.id, { onDelete: 'cascade' }),
   next: varchar('next', { length: 200 }).notNull(),
+  intent: varchar('intent', { length: 10 }).notNull().default('signin'),
   expiresAt: datetime('expires_at', { mode: 'date' }).notNull(),
 });
 
@@ -63,5 +65,13 @@ export const readings = mysqlTable('readings', {
   arm: int('arm'),
   hip: int('hip'),
   hadTop: int('had_top').notNull(),
+  captured: int('captured').notNull().default(0),
+  rider: mysqlEnum('rider', ['child', 'teen', 'adult']),
+  heightCm: int('height_cm'),
+  inseamCm: int('inseam_cm'),
+  crankMm: int('crank_mm'),
+  saddleMm: int('saddle_mm'),
+  stemMm: int('stem_mm'),
+  dropMm: int('drop_mm'),
   createdAt: datetime('created_at', { mode: 'date' }).notNull(),
 });

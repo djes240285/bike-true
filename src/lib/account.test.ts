@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { BIKE_LIMIT, cabinetNext, overLimit, parseBike, parseDisplayName, parseProfile, parseReading, READING_LIMIT } from './account';
+import { BIKE_LIMIT, cabinetNext, cmSuggestion, mmFits, overLimit, parseBike, parseDisplayName, parseMmInput, parseProfile, parseReading, READING_LIMIT } from './account';
 
 describe('profile', () => {
   test('крайние рост и шов проходят, шов меньше роста', () => {
@@ -42,6 +42,19 @@ describe('bike', () => {
     });
     expect(parseBike({ name: 'Шоссе', fit: 'race', crank_mm: 180, saddle_mm: 1000, stem_mm: 150, drop_mm: 200 }).ok).toBe(true);
     expect(parseBike({ name: 'Город', fit: 'city', crank_mm: null, saddle_mm: '', stem_mm: null, drop_mm: null }).ok).toBe(true);
+  });
+
+  test('ввод принимает половину миллиметра и подсказывает сантиметры', () => {
+    expect(parseMmInput('')).toBeNull();
+    expect(parseMmInput('172,5')).toBe(173);
+    expect(parseMmInput('17.5')).toBe(18);
+    expect(parseMmInput('17.2')).toBeUndefined();
+    expect(mmFits('crank_mm', 18)).toBe(false);
+    expect(mmFits('crank_mm', 175)).toBe(true);
+    expect(cmSuggestion('crank_mm', '17,5')).toBe(175);
+    expect(cmSuggestion('stem_mm', '11')).toBe(110);
+    expect(cmSuggestion('saddle_mm', '27,5')).toBeNull();
+    expect(cmSuggestion('drop_mm', '4,5')).toBeNull();
   });
 
   test('имя, посадка и шаг за краем отклоняются', () => {

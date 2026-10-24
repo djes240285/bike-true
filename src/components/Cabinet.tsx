@@ -1,10 +1,17 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { dict, type Locale } from '../i18n';
+import { bandFor } from '../lib/advice';
 import { FIT_IDS, RIDER_IDS, type FitId, type RiderId } from '../lib/fits';
+import { readingSetup, type ReadingSetup } from '../lib/reading-setup';
+import { readRiderLook, writeRiderLook } from '../lib/look';
 import { pathFor } from '../lib/paths';
+import { cmSuggestion, mmFits, parseMmInput, type BikeMmKey } from '../lib/account';
 import { apiUrl, cabinetFetch } from '../lib/cabinet-client';
+import MeasureHint from './MeasureHint';
+import Pick from './Pick';
+import Wheel from './Wheel';
 
-type Screen = 'home' | 'body' | 'bikes' | 'readings' | 'studio';
+type Screen = 'home' | 'body' | 'bikes' | 'readings' | 'studio' | 'signin';
 type Provider = 'google' | 'yandex' | 'telegram';
 type Angle = 'knee' | 'back' | 'arm' | 'hip';
 
@@ -28,6 +35,7 @@ type Bike = {
 
 type ReadingRow = {
   id: number;
+  bike_id: number | null;
   bike_name: string | null;
   fit: FitId;
   knee: number | null;
@@ -35,6 +43,14 @@ type ReadingRow = {
   arm: number | null;
   hip: number | null;
   had_top: boolean;
+  captured: boolean;
+  rider: RiderId | null;
+  height_cm: number | null;
+  inseam_cm: number | null;
+  crank_mm: number | null;
+  saddle_mm: number | null;
+  stem_mm: number | null;
+  drop_mm: number | null;
   created_at?: string;
   user_name?: string;
 };
@@ -59,14 +75,6 @@ function showNum(value: number | null): string {
   return value === null ? '' : String(value);
 }
 
-function currentNext(locale: Locale): string {
-  const fallback = pathFor(locale, '/account');
-  if (typeof location === 'undefined') return fallback;
-  const raw = new URLSearchParams(location.search).get('next');
-  // Только для показа в ссылке: сервер всё равно прогоняет через cabinetNext.
-  return raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : fallback;
-}
-
 function oauthHref(provider: 'google' | 'yandex', next: string): string {
   return `${apiUrl()}/auth/${provider}?next=${encodeURIComponent(next)}`;
 }
@@ -85,6 +93,7 @@ function TelegramLogin({ locale, next }: { locale: Locale; next: string }) {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    if (typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) return undefined;
     let alive = true;
     const win = window as unknown as Record<string, unknown>;
     win.onBikeTrueTelegram = async (user: Record<string, unknown>) => {
@@ -119,7 +128,6 @@ function TelegramLogin({ locale, next }: { locale: Locale; next: string }) {
         script.setAttribute('data-telegram-login', data.telegramUsername);
         script.setAttribute('data-size', 'large');
         script.setAttribute('data-onauth', 'onBikeTrueTelegram(user)');
-        script.setAttribute('data-request-access', 'write');
         host.current.appendChild(script);
       } catch {
         /* виджета нет — остаются другие входы */
@@ -129,17 +137,18 @@ function TelegramLogin({ locale, next }: { locale: Locale; next: string }) {
       alive = false;
       delete win.onBikeTrueTelegram;
     };
-  }, [next, t.taken, t.error]);
+  }, [next, t.error, t.taken]);
 
+  const localHost = typeof location !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1');
   return (
     <div>
-      <div ref={host} />
+      {localHost ? <p className="note">{t.telegramLocal}</p> : <div ref={host} />}
       {message && <p className="warn" role="alert">{message}</p>}
     </div>
   );
 }
 
-function Links({ locale, screen, fitter }: { locale: Locale; screen: Screen; fitter: boolean }) {
+function CabinetBar({ locale, screen, fitter }: { locale: Locale; screen: Screen; fitter: boolean }) {
   const t = dict[locale].account;
   const items: [Screen, string, string][] = [
     ['home', '/account', t.title],
@@ -149,21 +158,31 @@ function Links({ locale, screen, fitter }: { locale: Locale; screen: Screen; fit
   ];
   if (fitter) items.push(['studio', '/studio', t.studioTitle]);
   return (
-    <p className="note">
-      {items.map(([id, path, label], index) => (
-        <span key={id}>
-          {index > 0 && ' · '}
-          <a href={pathFor(locale, path)} aria-current={screen === id ? 'page' : undefined}>{label}</a>
-        </span>
-      ))}
-    </p>
+    <div className="cabinet-bar">
+      <nav className="cabinet-tabs" aria-label={t.title}>
+        {items.map(([id, path, label]) => (
+          <a key={id} href={pathFor(locale, path)} aria-current={screen === id ? 'page' : undefined}>{label}</a>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+function Providers({ locale, next }: { locale: Locale; next: string }) {
+  const t = dict[locale].account;
+  return (
+    <>
+      <p className="lead">{t.signinLead}</p>
+      <p><a className="button" href={oauthHref('google', next)}>{t.google}</a></p>
+      <p><a className="button" href={oauthHref('yandex', next)}>{t.yandex}</a></p>
+      <TelegramLogin locale={locale} next={next} />
+    </>
   );
 }
 
 function Home({ locale, session, reload }: { locale: Locale; session: Session; reload: () => void }) {
   const t = dict[locale].account;
   const names = PROVIDER_NAMES[locale];
-  const [next] = useState(() => currentNext(locale));
   const here = pathFor(locale, '/account');
   const me = session.state === 'in' ? session.me : null;
   const [name, setName] = useState('');
@@ -173,16 +192,13 @@ function Home({ locale, session, reload }: { locale: Locale; session: Session; r
     if (me) setName(me.name);
   }, [me?.name]);
 
-  if (session.state === 'loading') return null;
+  if (session.state === 'loading') return <Wheel label={t.cabinetLoading} />;
   if (session.state === 'error') return <p className="warn" role="alert">{t.error}</p>;
 
   if (!me) {
     return (
       <>
-        <p className="lead">{t.leadOut}</p>
-        <p><a className="button" href={oauthHref('google', next)}>{t.google}</a></p>
-        <p><a className="button" href={oauthHref('yandex', next)}>{t.yandex}</a></p>
-        <TelegramLogin locale={locale} next={next} />
+        <Providers locale={locale} next={here} />
       </>
     );
   }
@@ -252,16 +268,16 @@ function Home({ locale, session, reload }: { locale: Locale; session: Session; r
   );
 }
 
-function Body({ locale, me }: { locale: Locale; me: Me }) {
+function Body({ locale, me, onRider }: { locale: Locale; me: Me; onRider: (rider: RiderId | '') => void }) {
   const t = dict[locale].account;
   const [rider, setRider] = useState<string>(me.profile?.rider ?? '');
   const [height, setHeight] = useState(showNum(me.profile?.height_cm ?? null));
   const [inseam, setInseam] = useState(showNum(me.profile?.inseam_cm ?? null));
-  const [status, setStatus] = useState<'' | 'saved' | 'error'>('');
+  const [status, setStatus] = useState<'' | 'saving' | 'saved' | 'error'>('');
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    setStatus('');
+    setStatus('saving');
     const heightCm = parseInt0(height);
     const inseamCm = parseInt0(inseam);
     if (heightCm === undefined || inseamCm === undefined) {
@@ -281,15 +297,26 @@ function Body({ locale, me }: { locale: Locale; me: Me }) {
 
   return (
     <form onSubmit={submit}>
-      <label>
-        {t.rider}
-        <select value={rider} onChange={(e) => setRider(e.target.value)}>
-          <option value="" />
-          {RIDER_IDS.map((id) => (
-            <option key={id} value={id}>{t[id]}</option>
-          ))}
-        </select>
-      </label>
+      <fieldset className="rider-pick">
+        <legend>{t.rider}</legend>
+        {RIDER_IDS.map((id) => (
+          <button
+            key={id}
+            type="button"
+            className="rider-card"
+            data-rider={id}
+            role="radio"
+            aria-checked={rider === id}
+            onClick={() => {
+              setRider(id);
+              onRider(id);
+            }}
+          >
+            {t[id]}
+          </button>
+        ))}
+      </fieldset>
+      <p className="note">{t.riderLook}</p>
       <label>
         {t.height}
         <input inputMode="numeric" value={height} onChange={(e) => setHeight(e.target.value)} />
@@ -299,7 +326,9 @@ function Body({ locale, me }: { locale: Locale; me: Me }) {
         {t.inseam}
         <input inputMode="numeric" value={inseam} onChange={(e) => setInseam(e.target.value)} />
       </label>
-      <button className="button" type="submit">{t.save}</button>
+      <button className="button" type="submit" disabled={status === 'saving'}>
+        {status === 'saving' ? <Wheel /> : t.save}
+      </button>
       {status === 'saved' && <p className="note" role="status">{t.saved}</p>}
       {status === 'error' && <p className="warn" role="alert">{t.error}</p>}
     </form>
@@ -317,6 +346,7 @@ function Bikes({ locale }: { locale: Locale }) {
   const [stem, setStem] = useState('');
   const [drop, setDrop] = useState('');
   const [status, setStatus] = useState<'' | 'saved' | 'error' | 'limit'>('');
+  const [problems, setProblems] = useState<Partial<Record<'crank' | 'saddle' | 'stem' | 'drop', string>>>({});
 
   async function load() {
     try {
@@ -341,6 +371,7 @@ function Bikes({ locale }: { locale: Locale }) {
     setSaddle('');
     setStem('');
     setDrop('');
+    setProblems({});
   }
 
   function edit(bike: Bike) {
@@ -352,17 +383,32 @@ function Bikes({ locale }: { locale: Locale }) {
     setStem(showNum(bike.stem_mm));
     setDrop(showNum(bike.drop_mm));
     setStatus('');
+    setProblems({});
   }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     setStatus('');
-    const sizes = [parseInt0(crank), parseInt0(saddle), parseInt0(stem), parseInt0(drop)];
-    if (sizes.some((value) => value === undefined)) {
-      setStatus('error');
-      return;
+    const fields = [
+      ['crank', 'crank_mm', crank],
+      ['saddle', 'saddle_mm', saddle],
+      ['stem', 'stem_mm', stem],
+      ['drop', 'drop_mm', drop],
+    ] as const;
+    const next: Partial<Record<(typeof fields)[number][0], string>> = {};
+    const sizes: (number | null)[] = [];
+    for (const [name, key, raw] of fields) {
+      const parsed = parseMmInput(raw);
+      if (parsed === undefined || !mmFits(key as BikeMmKey, parsed ?? null)) {
+        const suggested = cmSuggestion(key as BikeMmKey, raw);
+        next[name] = suggested ? `${t.mmRange[name]} ${t.mmCm.replace('{mm}', String(suggested))}` : t.mmRange[name];
+        continue;
+      }
+      sizes.push(parsed);
     }
-    const [crankMm, saddleMm, stemMm, dropMm] = sizes as (number | null)[];
+    setProblems(next);
+    if (Object.keys(next).length > 0) return;
+    const [crankMm, saddleMm, stemMm, dropMm] = sizes;
     const body = JSON.stringify({
       name: name.trim(),
       fit,
@@ -426,29 +472,31 @@ function Bikes({ locale }: { locale: Locale }) {
           {t.bikeName}
           <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40} required />
         </label>
+        <Pick
+          label={t.fit}
+          value={fit}
+          options={FIT_IDS.map((id) => ({ value: id, label: t[id] }))}
+          onChange={(next) => setFit(next as FitId)}
+        />
         <label>
-          {t.fit}
-          <select value={fit} onChange={(e) => setFit(e.target.value as FitId)}>
-            {FIT_IDS.map((id) => (
-              <option key={id} value={id}>{t[id]}</option>
-            ))}
-          </select>
+          <span className="field-label">{t.crank}<MeasureHint locale={locale} kind="crank" /></span>
+          <input inputMode="decimal" placeholder="170" aria-invalid={Boolean(problems.crank)} className={problems.crank ? 'is-bad' : undefined} value={crank} onChange={(e) => setCrank(e.target.value)} />
+          {problems.crank && <span className="field-error" role="alert">{problems.crank}</span>}
         </label>
         <label>
-          {t.crank}
-          <input inputMode="numeric" value={crank} onChange={(e) => setCrank(e.target.value)} />
+          <span className="field-label">{t.saddle}<MeasureHint locale={locale} kind="saddle" /></span>
+          <input inputMode="decimal" placeholder="740" aria-invalid={Boolean(problems.saddle)} className={problems.saddle ? 'is-bad' : undefined} value={saddle} onChange={(e) => setSaddle(e.target.value)} />
+          {problems.saddle && <span className="field-error" role="alert">{problems.saddle}</span>}
         </label>
         <label>
-          {t.saddle}
-          <input inputMode="numeric" value={saddle} onChange={(e) => setSaddle(e.target.value)} />
+          <span className="field-label">{t.stem}<MeasureHint locale={locale} kind="stem" /></span>
+          <input inputMode="decimal" placeholder="90" aria-invalid={Boolean(problems.stem)} className={problems.stem ? 'is-bad' : undefined} value={stem} onChange={(e) => setStem(e.target.value)} />
+          {problems.stem && <span className="field-error" role="alert">{problems.stem}</span>}
         </label>
         <label>
-          {t.stem}
-          <input inputMode="numeric" value={stem} onChange={(e) => setStem(e.target.value)} />
-        </label>
-        <label>
-          {t.drop}
-          <input inputMode="numeric" value={drop} onChange={(e) => setDrop(e.target.value)} />
+          <span className="field-label">{t.drop}<MeasureHint locale={locale} kind="drop" /></span>
+          <input inputMode="decimal" placeholder="40" aria-invalid={Boolean(problems.drop)} className={problems.drop ? 'is-bad' : undefined} value={drop} onChange={(e) => setDrop(e.target.value)} />
+          {problems.drop && <span className="field-error" role="alert">{problems.drop}</span>}
         </label>
         <button className="button" type="submit">{editing === null ? t.addBike : t.save}</button>
         {editing !== null && (
@@ -463,43 +511,156 @@ function Bikes({ locale }: { locale: Locale }) {
   );
 }
 
-function ReadingList({ locale, rows, onRemove }: { locale: Locale; rows: ReadingRow[]; onRemove?: (id: number) => void }) {
+const ANGLE_SIZE = { knee: 'saddle', back: 'drop', arm: 'stem', hip: 'crank' } as const;
+
+function readingDate(locale: Locale, value: string | undefined) {
+  if (!value) return '';
+  return new Date(value).toLocaleDateString(locale === 'ru' ? 'ru-RU' : 'en-GB');
+}
+
+function sizeText(locale: Locale, value: number | null) {
+  const t = dict[locale].account;
+  return value === null ? t.readingMissing : `${value} ${locale === 'ru' ? 'мм' : 'mm'}`;
+}
+
+function ReadingDetail({ locale, row, setup }: { locale: Locale; row: ReadingRow; setup: ReadingSetup }) {
+  const t = dict[locale].account;
+  const copy = dict[locale];
+  const showSizes = setup.source !== 'none';
+  return (
+    <div className="reading-detail">
+      <p className="reading-meta">
+        {row.user_name ? `${row.user_name} · ` : ''}
+        {readingDate(locale, row.created_at)}
+        {readingDate(locale, row.created_at) ? ' · ' : ''}
+        {t[row.fit]}
+        {row.bike_name ? ` · ${row.bike_name}` : ''}
+      </p>
+      {setup.source === 'today' && <p className="note">{t.readingToday}</p>}
+      {setup.source === 'none' && <p className="note">{t.readingNone}</p>}
+      <div className="angles">
+        {ANGLES.map((key) => {
+          const value = row[key];
+          const sizeKey = ANGLE_SIZE[key];
+          const sizes = { saddle: setup.saddleMm, drop: setup.dropMm, stem: setup.stemMm, crank: setup.crankMm };
+          const size = sizes[sizeKey];
+          const missing = value === null;
+          const zone = missing ? null : bandFor(key, value);
+          const words = missing
+            ? (key === 'hip' && !row.had_top ? copy.analyze.hipMissing : copy.analyze.notVisible)
+            : copy.advice[key][zone!];
+          return (
+            <article key={key} className={`readout ${zone ?? 'muted-readout'}`}>
+              <b>{missing ? '—' : `${value}°`}</b>
+              <span>
+                <strong>{copy.angles[key].label}</strong>
+                {words}
+                {showSizes && <small>{t[sizeKey]}: {sizeText(locale, size)}</small>}
+              </span>
+            </article>
+          );
+        })}
+      </div>
+      {showSizes && (
+        <p className="reading-meta">
+          {t.rider}: {setup.rider ? t[setup.rider] : t.readingMissing}
+          {' · '}
+          {t.height}: {setup.heightCm === null ? t.readingMissing : `${setup.heightCm} ${locale === 'ru' ? 'см' : 'cm'}`}
+          {' · '}
+          {t.inseam}: {setup.inseamCm === null ? t.readingMissing : `${setup.inseamCm} ${locale === 'ru' ? 'см' : 'cm'}`}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ReadingList({
+  locale,
+  rows,
+  live,
+  onRemove,
+}: {
+  locale: Locale;
+  rows: ReadingRow[];
+  live: { profile: Me['profile']; bikes: Bike[] } | null;
+  onRemove?: (id: number) => void;
+}) {
   const t = dict[locale].account;
   const angles = dict[locale].angles;
+  const [openId, setOpenId] = useState<number | null>(null);
+  const open = rows.find((row) => row.id === openId);
   if (rows.length === 0) return <p className="note">{t.empty}</p>;
+  if (open) {
+    const setup = readingSetup(
+      {
+        captured: open.captured,
+        bikeId: open.bike_id,
+        rider: open.rider,
+        heightCm: open.height_cm,
+        inseamCm: open.inseam_cm,
+        crankMm: open.crank_mm,
+        saddleMm: open.saddle_mm,
+        stemMm: open.stem_mm,
+        dropMm: open.drop_mm,
+      },
+      live && {
+        profile: live.profile && {
+          rider: live.profile.rider,
+          heightCm: live.profile.height_cm,
+          inseamCm: live.profile.inseam_cm,
+        },
+        bikes: live.bikes.map((bike) => ({
+          id: bike.id,
+          crankMm: bike.crank_mm,
+          saddleMm: bike.saddle_mm,
+          stemMm: bike.stem_mm,
+          dropMm: bike.drop_mm,
+        })),
+      },
+    );
+    return (
+      <>
+        <p><button className="button ghost" type="button" onClick={() => setOpenId(null)}>{t.readingBack}</button></p>
+        <ReadingDetail locale={locale} row={open} setup={setup} />
+        {onRemove && <p><button className="button ghost" type="button" onClick={() => onRemove(open.id)}>{t.remove}</button></p>}
+      </>
+    );
+  }
   return (
-    <ul>
+    <ul className="reading-list">
       {rows.map((row) => (
-        <li key={row.id}>
-          {row.user_name && <strong>{row.user_name} · </strong>}
-          {row.created_at && <span>{new Date(row.created_at).toLocaleDateString(locale === 'ru' ? 'ru-RU' : 'en-GB')} · </span>}
-          {t[row.fit]}
-          {row.bike_name ? ` · ${row.bike_name}` : ''}
-          {' · '}
-          {ANGLES.map((key) => `${angles[key].label} ${row[key] === null ? '—' : `${row[key]}°`}`).join(', ')}
-          {onRemove && (
-            <>
-              {' '}
-              <button className="button ghost" type="button" onClick={() => onRemove(row.id)}>{t.remove}</button>
-            </>
-          )}
+        <li key={row.id} className="reading-item">
+          <button className="reading-open" type="button" onClick={() => setOpenId(row.id)}>
+            <strong>
+              {row.user_name ? `${row.user_name} · ` : ''}
+              {readingDate(locale, row.created_at)}
+              {readingDate(locale, row.created_at) ? ' · ' : ''}
+              {t[row.fit]}
+              {row.bike_name ? ` · ${row.bike_name}` : ''}
+            </strong>
+            <span>{ANGLES.map((key) => `${angles[key].label} ${row[key] === null ? '—' : `${row[key]}°`}`).join(' · ')}</span>
+          </button>
+          {onRemove && <button className="button ghost" type="button" onClick={() => onRemove(row.id)}>{t.remove}</button>}
         </li>
       ))}
     </ul>
   );
 }
 
-function Readings({ locale }: { locale: Locale }) {
+function Readings({ locale, profile }: { locale: Locale; profile: Me['profile'] }) {
   const t = dict[locale].account;
   const [rows, setRows] = useState<ReadingRow[] | null>(null);
+  const [bikes, setBikes] = useState<Bike[]>([]);
   const [failed, setFailed] = useState(false);
 
   async function load() {
     try {
-      const res = await cabinetFetch('/readings');
-      const data = await readJson<ReadingRow[]>(res);
-      if (res.ok && Array.isArray(data)) {
+      const [readingRes, bikeRes] = await Promise.all([cabinetFetch('/readings'), cabinetFetch('/bikes')]);
+      const data = await readJson<ReadingRow[]>(readingRes);
+      const bikeData = await readJson<Bike[]>(bikeRes);
+      if (readingRes.ok && Array.isArray(data)) {
         setRows(data);
+        setBikes(bikeRes.ok && Array.isArray(bikeData) ? bikeData : []);
         setFailed(false);
       } else setFailed(true);
     } catch {
@@ -524,7 +685,7 @@ function Readings({ locale }: { locale: Locale }) {
   return (
     <>
       {failed && <p className="warn" role="alert">{t.error}</p>}
-      {rows && <ReadingList locale={locale} rows={rows} onRemove={remove} />}
+      {rows && <ReadingList locale={locale} rows={rows} live={{ profile, bikes }} onRemove={remove} />}
     </>
   );
 }
@@ -567,7 +728,7 @@ function Studio({ locale }: { locale: Locale }) {
     );
   }
   if (state === 'error') return <p className="warn" role="alert">{t.error}</p>;
-  if (state === 'ok' && rows) return <ReadingList locale={locale} rows={rows} />;
+  if (state === 'ok' && rows) return <ReadingList locale={locale} rows={rows} live={null} />;
   return null;
 }
 
@@ -575,6 +736,12 @@ export default function Cabinet({ locale, screen }: { locale: Locale; screen: Sc
   const t = dict[locale].account;
   const enabled = apiUrl() !== '';
   const [session, setSession] = useState<Session>({ state: 'loading' });
+  const [riderLook, setRiderLook] = useState<RiderId | ''>(() => readRiderLook());
+
+  function chooseRider(rider: RiderId | '') {
+    setRiderLook(rider);
+    writeRiderLook(rider);
+  }
 
   async function load() {
     try {
@@ -584,7 +751,12 @@ export default function Cabinet({ locale, screen }: { locale: Locale; screen: Sc
         return;
       }
       const data = await readJson<Me>(res);
-      setSession(res.ok && data ? { state: 'in', me: data } : { state: 'error' });
+      if (res.ok && data) {
+        setSession({ state: 'in', me: data });
+        if (data.profile?.rider) chooseRider(data.profile.rider);
+      } else {
+        setSession({ state: 'error' });
+      }
     } catch {
       setSession({ state: 'error' });
     }
@@ -597,43 +769,54 @@ export default function Cabinet({ locale, screen }: { locale: Locale; screen: Sc
   if (!enabled) return <p className="note">{t.unavailable}</p>;
 
   const fitter = session.state === 'in' && session.me.role === 'fitter';
-  const links = <Links locale={locale} screen={screen} fitter={fitter} />;
+  const bar = <CabinetBar locale={locale} screen={screen} fitter={fitter} />;
+  const shell = (children: ReactNode) => (
+    <div className="cabinet" data-rider={riderLook || 'adult'}>{children}</div>
+  );
+
+  if (screen === 'signin') {
+    if (session.state === 'in') {
+      return <p className="lead"><a href={pathFor(locale, '/account')}>{session.me.name}</a></p>;
+    }
+    if (session.state === 'loading') return <Wheel label={t.cabinetLoading} />;
+    return <Providers locale={locale} next={pathFor(locale, '/account')} />;
+  }
 
   if (screen === 'home') {
-    return (
+    return shell(
       <>
-        {links}
+        {session.state === 'in' && bar}
         <Home locale={locale} session={session} reload={load} />
-      </>
+      </>,
     );
   }
 
-  if (session.state === 'loading') return links;
+  if (session.state === 'loading') return shell(<><CabinetBar locale={locale} screen={screen} fitter={false} /><Wheel label={t.cabinetLoading} /></>);
   if (session.state === 'error') {
-    return (
+    return shell(
       <>
-        {links}
+        {bar}
         <p className="warn" role="alert">{t.error}</p>
-      </>
+      </>,
     );
   }
   if (session.state === 'out') {
-    return (
+    return shell(
       <>
-        {links}
+        {bar}
         <p className="lead">{t.leadOut}</p>
         <p><a className="button" href={pathFor(locale, '/account')}>{t.title}</a></p>
-      </>
+      </>,
     );
   }
 
-  return (
+  return shell(
     <>
-      {links}
-      {screen === 'body' && <Body locale={locale} me={session.me} />}
+      {bar}
+      {screen === 'body' && <Body locale={locale} me={session.me} onRider={chooseRider} />}
       {screen === 'bikes' && <Bikes locale={locale} />}
-      {screen === 'readings' && <Readings locale={locale} />}
+      {screen === 'readings' && <Readings locale={locale} profile={session.me.profile} />}
       {screen === 'studio' && <Studio locale={locale} />}
-    </>
+    </>,
   );
 }

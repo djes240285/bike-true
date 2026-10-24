@@ -1,4 +1,5 @@
 import { and, eq } from 'drizzle-orm';
+import { avatarUrl } from '../src/lib/avatar';
 import { decideLink } from '../src/lib/link';
 import { database } from './db';
 import { identities, users } from './schema';
@@ -10,6 +11,7 @@ type SignInInput = {
   providerUserId: string;
   email: string | null;
   name: string;
+  avatar: string | null;
   sessionUserId: number | null;
 };
 type SignInResult = { ok: true; userId: number } | { ok: false; error: 'taken' };
@@ -42,6 +44,7 @@ async function signInOnce(input: SignInInput): Promise<SignInResult> {
   const db = database();
   const email = input.email?.trim().toLowerCase() || null;
   const name = input.name.trim().slice(0, 80) || 'Велосипедист';
+  const avatar = avatarUrl(input.avatar);
 
   const identityRows = await db
     .select({ userId: identities.userId })
@@ -68,6 +71,7 @@ async function signInOnce(input: SignInInput): Promise<SignInResult> {
         await db.update(users).set({ email }).where(eq(users.id, decision.userId));
       }
     }
+    if (avatar) await db.update(users).set({ avatarUrl: avatar }).where(eq(users.id, decision.userId));
     return { ok: true, userId: decision.userId };
   }
 
@@ -78,12 +82,13 @@ async function signInOnce(input: SignInInput): Promise<SignInResult> {
       providerUserId: input.providerUserId,
       createdAt: new Date(),
     });
+    if (avatar) await db.update(users).set({ avatarUrl: avatar }).where(eq(users.id, decision.userId));
     return { ok: true, userId: decision.userId };
   }
 
   const now = new Date();
   const userId = await db.transaction(async (tx) => {
-    const [created] = await tx.insert(users).values({ name, email, role: 'rider', createdAt: now });
+    const [created] = await tx.insert(users).values({ name, email, avatarUrl: avatar, role: 'rider', createdAt: now });
     await tx.insert(identities).values({
       userId: created.insertId,
       provider: input.provider,

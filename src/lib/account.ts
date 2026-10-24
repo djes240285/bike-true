@@ -31,6 +31,43 @@ function optionalInt(value: unknown, min: number, max: number): number | null | 
   return undefined;
 }
 
+export const BIKE_MM = {
+  crank_mm: { min: 120, max: 180 },
+  saddle_mm: { min: 400, max: 1000 },
+  stem_mm: { min: 30, max: 150 },
+  drop_mm: { min: -150, max: 200 },
+} as const;
+
+export type BikeMmKey = keyof typeof BIKE_MM;
+
+/** Пусто — null. Целое или половина миллиметра (172,5) — ближайшее целое. Иначе ошибка. */
+export function parseMmInput(raw: string): number | null | undefined {
+  const text = raw.trim().replace(/\s/g, '').replace(',', '.');
+  if (!text) return null;
+  if (!/^-?\d+(\.\d+)?$/.test(text)) return undefined;
+  const value = Number(text);
+  if (!Number.isFinite(value)) return undefined;
+  const halves = value * 2;
+  if (Math.abs(halves - Math.round(halves)) > 1e-6) return undefined;
+  return Math.round(value);
+}
+
+export function mmFits(key: BikeMmKey, value: number | null): boolean {
+  if (value === null) return true;
+  const range = BIKE_MM[key];
+  return value >= range.min && value <= range.max;
+}
+
+/** Если число похоже на сантиметры и ×10 входит в диапазон — вернуть миллиметры. */
+export function cmSuggestion(key: BikeMmKey, raw: string): number | null {
+  const text = raw.trim().replace(/\s/g, '').replace(',', '.');
+  if (!/^-?\d+(\.\d+)?$/.test(text)) return null;
+  const value = Number(text);
+  if (!Number.isFinite(value)) return null;
+  const scaled = Math.round(value * 10);
+  return mmFits(key, scaled) && !mmFits(key, Math.round(value)) ? scaled : null;
+}
+
 export function parseProfile(body: unknown) {
   if (hasPhotoField(body)) return { ok: false as const, error: 'photo' as const };
   if (!body || typeof body !== 'object') return { ok: false as const, error: 'rider' as const };
@@ -51,10 +88,10 @@ export function parseBike(body: unknown) {
   const name = typeof record.name === 'string' ? record.name.trim() : '';
   if (!name || name.length > 40) return { ok: false as const, error: 'name' as const };
   if (!isFit(record.fit)) return { ok: false as const, error: 'fit' as const };
-  const crankMm = optionalInt(record.crank_mm, 120, 180);
-  const saddleMm = optionalInt(record.saddle_mm, 400, 1000);
-  const stemMm = optionalInt(record.stem_mm, 30, 150);
-  const dropMm = optionalInt(record.drop_mm, -150, 200);
+  const crankMm = optionalInt(record.crank_mm, BIKE_MM.crank_mm.min, BIKE_MM.crank_mm.max);
+  const saddleMm = optionalInt(record.saddle_mm, BIKE_MM.saddle_mm.min, BIKE_MM.saddle_mm.max);
+  const stemMm = optionalInt(record.stem_mm, BIKE_MM.stem_mm.min, BIKE_MM.stem_mm.max);
+  const dropMm = optionalInt(record.drop_mm, BIKE_MM.drop_mm.min, BIKE_MM.drop_mm.max);
   if (crankMm === undefined || saddleMm === undefined || stemMm === undefined || dropMm === undefined) {
     return { ok: false as const, error: 'bike' as const };
   }

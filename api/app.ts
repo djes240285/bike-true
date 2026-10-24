@@ -6,6 +6,7 @@ import { getCookie } from 'hono/cookie';
 import { BIKE_LIMIT, READING_LIMIT, cabinetNext, overLimit, parseBike, parseDisplayName, parseProfile, parseReading } from '../src/lib/account';
 import { googleAuthUrl, yandexAuthUrl } from '../src/lib/oauth-url';
 import { clearSessionCookie, hashSessionToken, newSessionToken, sessionCookie } from '../src/lib/session';
+import { avatarUrl, yandexAvatar } from '../src/lib/avatar';
 import { telegramName, verifyTelegramLogin } from '../src/lib/telegram-login';
 import { database } from './db';
 import { currentUser } from './guard';
@@ -35,7 +36,21 @@ async function startSession(userId: number) {
 }
 
 function webOrigin() {
-  return process.env.WEB_ORIGIN?.trim() || 'http://localhost:4321';
+  return process.env.WEB_ORIGIN?.trim() || 'http://127.0.0.1:4321';
+}
+
+function sameLocalOrigin(candidate: string): boolean {
+  try {
+    const allowed = new URL(webOrigin());
+    const incoming = new URL(candidate);
+    const loopback = new Set(['localhost', '127.0.0.1']);
+    return loopback.has(allowed.hostname)
+      && loopback.has(incoming.hostname)
+      && allowed.protocol === incoming.protocol
+      && allowed.port === incoming.port;
+  } catch {
+    return false;
+  }
 }
 
 function apiOrigin() {
@@ -71,6 +86,14 @@ function readingJson(row: {
   arm: number | null;
   hip: number | null;
   hadTop: number;
+  captured: number;
+  rider: 'child' | 'teen' | 'adult' | null;
+  heightCm: number | null;
+  inseamCm: number | null;
+  crankMm: number | null;
+  saddleMm: number | null;
+  stemMm: number | null;
+  dropMm: number | null;
   createdAt: Date;
 }) {
   return {
@@ -83,6 +106,14 @@ function readingJson(row: {
     arm: row.arm,
     hip: row.hip,
     had_top: Number(row.hadTop) === 1,
+    captured: Number(row.captured) === 1,
+    rider: row.rider,
+    height_cm: row.heightCm,
+    inseam_cm: row.inseamCm,
+    crank_mm: row.crankMm,
+    saddle_mm: row.saddleMm,
+    stem_mm: row.stemMm,
+    drop_mm: row.dropMm,
     created_at: row.createdAt.toISOString(),
   };
 }
@@ -119,7 +150,7 @@ async function exchangeProfile(provider: OAuthProvider, code: string) {
       if (!id) return null;
       // Почту, которую Google не подтвердил, не берём: по ней связываются аккаунты.
       const email = info.email_verified === false ? '' : text(info.email);
-      return { id, email: email || null, name: text(info.name) };
+      return { id, email: email || null, name: text(info.name), avatar: avatarUrl(info.picture) };
     }
 
     const response = await fetch('https://login.yandex.ru/info?format=json', {
@@ -134,6 +165,7 @@ async function exchangeProfile(provider: OAuthProvider, code: string) {
       id,
       email: text(info.default_email) || null,
       name: text(info.display_name) || text(info.real_name),
+      avatar: yandexAvatar(info),
     };
   } catch {
     return null;
@@ -142,8 +174,11 @@ async function exchangeProfile(provider: OAuthProvider, code: string) {
 
 export function createApp() {
   const app = new Hono();
-  const origin = webOrigin();
-  app.use('*', cors({ origin, credentials: true, allowHeaders: ['Content-Type', 'X-BikeTrue'] }));
+  app.use('*', cors({
+    origin: (origin) => (origin === webOrigin() || sameLocalOrigin(origin) ? origin : null),
+    credentials: true,
+    allowHeaders: ['Content-Type', 'X-BikeTrue'],
+  }));
   app.use('*', async (c, next) => {
     const method = c.req.method;
     if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS' && c.req.header('x-biketrue') !== '1') {
@@ -197,6 +232,7 @@ export function createApp() {
         providerUserId: profile.id,
         email: profile.email,
         name: profile.name,
+        avatar: profile.avatar,
         sessionUserId: row.userId,
       });
       if (!result.ok) return c.json({ ok: false, error: 'taken' }, 409);
@@ -228,6 +264,7 @@ export function createApp() {
       providerUserId: fields.id,
       email: null,
       name: telegramName(fields),
+      avatar: avatarUrl(fields.photo_url),
       sessionUserId: user?.id ?? null,
     });
     if (!result.ok) return c.json({ ok: false, error: 'taken' }, 409);
@@ -259,6 +296,7 @@ export function createApp() {
     return c.json({
       name: user.name,
       email: user.email,
+      avatar: user.avatarUrl,
       role: user.role,
       providers: [...new Set(linked.map((item) => item.provider))],
       profile: profile
@@ -415,6 +453,14 @@ export function createApp() {
         arm: readings.arm,
         hip: readings.hip,
         hadTop: readings.hadTop,
+        captured: readings.captured,
+        rider: readings.rider,
+        heightCm: readings.heightCm,
+        inseamCm: readings.inseamCm,
+        crankMm: readings.crankMm,
+        saddleMm: readings.saddleMm,
+        stemMm: readings.stemMm,
+        dropMm: readings.dropMm,
         createdAt: readings.createdAt,
       })
       .from(readings)
@@ -433,14 +479,24 @@ export function createApp() {
     const db = database();
     const counted = await db.select({ total: count() }).from(readings).where(eq(readings.userId, user.id));
     if (overLimit(Number(counted[0]?.total ?? 0), READING_LIMIT)) return c.json({ ok: false, error: 'limit' }, 409);
+    let bike: { crankMm: number | null; saddleMm: number | null; stemMm: number | null; dropMm: number | null } | undefined;
     if (parsed.reading.bikeId !== null) {
       const owned = await db
-        .select({ id: bikes.id })
+        .select({
+          id: bikes.id,
+          crankMm: bikes.crankMm,
+          saddleMm: bikes.saddleMm,
+          stemMm: bikes.stemMm,
+          dropMm: bikes.dropMm,
+        })
         .from(bikes)
         .where(and(eq(bikes.id, parsed.reading.bikeId), eq(bikes.userId, user.id)))
         .limit(1);
-      if (!owned[0]) return c.json({ ok: false, error: 'bike' }, 404);
+      bike = owned[0];
+      if (!bike) return c.json({ ok: false, error: 'bike' }, 404);
     }
+    const profileRows = await db.select().from(profiles).where(eq(profiles.userId, user.id)).limit(1);
+    const profile = profileRows[0];
     const { fit, bikeId, knee, back, arm, hip, hadTop } = parsed.reading;
     await db.insert(readings).values({
       userId: user.id,
@@ -451,6 +507,14 @@ export function createApp() {
       arm,
       hip,
       hadTop: hadTop ? 1 : 0,
+      captured: 1,
+      rider: profile?.rider ?? null,
+      heightCm: profile?.heightCm ?? null,
+      inseamCm: profile?.inseamCm ?? null,
+      crankMm: bike?.crankMm ?? null,
+      saddleMm: bike?.saddleMm ?? null,
+      stemMm: bike?.stemMm ?? null,
+      dropMm: bike?.dropMm ?? null,
       createdAt: new Date(),
     });
     return c.json({ ok: true });
@@ -487,6 +551,14 @@ export function createApp() {
         arm: readings.arm,
         hip: readings.hip,
         hadTop: readings.hadTop,
+        captured: readings.captured,
+        rider: readings.rider,
+        heightCm: readings.heightCm,
+        inseamCm: readings.inseamCm,
+        crankMm: readings.crankMm,
+        saddleMm: readings.saddleMm,
+        stemMm: readings.stemMm,
+        dropMm: readings.dropMm,
         createdAt: readings.createdAt,
         userName: users.name,
       })

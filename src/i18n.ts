@@ -18,6 +18,7 @@ export type Dict = {
     secondary: string;
     proof: string[];
     sample: string;
+    samplePoses: string[];
     benefitsKicker: string;
     benefitsTitle: string;
     benefits: Card[];
@@ -35,6 +36,11 @@ export type Dict = {
     ctaText: string;
     ctaPrimary: string;
     ctaSecondary: string;
+    supportTitle: string;
+    supportText: string;
+    supportCustom: string;
+    supportButton: string;
+    supportPending: string;
   };
   angles: Record<'knee' | 'back' | 'arm' | 'hip', { label: string; range: string; where: string }>;
   advice: Record<'knee' | 'back' | 'arm' | 'hip', BandCopy>;
@@ -118,9 +124,12 @@ export type Dict = {
     title: string;
     leadOut: string;
     leadIn: string;
+    signin: string;
+    signinLead: string;
     google: string;
     yandex: string;
     telegram: string;
+    telegramLocal: string;
     connect: string;
     logout: string;
     delete: string;
@@ -133,6 +142,11 @@ export type Dict = {
     bikes: string;
     readings: string;
     rider: string;
+    riderLook: string;
+    theme: string;
+    themeLight: string;
+    themeDark: string;
+    cabinetLoading: string;
     child: string;
     teen: string;
     adult: string;
@@ -149,10 +163,23 @@ export type Dict = {
     saddle: string;
     stem: string;
     drop: string;
+    measureHint: string;
+    mmRange: Record<'crank' | 'saddle' | 'stem' | 'drop', string>;
+    mmCm: string;
+    measures: {
+      crank: { title: string; text: string; steps: string[] };
+      saddle: { title: string; text: string; steps: string[] };
+      stem: { title: string; text: string; steps: string[] };
+      drop: { title: string; text: string; steps: string[] };
+    };
     bikeNote: string;
     addBike: string;
     noBike: string;
     empty: string;
+    readingBack: string;
+    readingToday: string;
+    readingNone: string;
+    readingMissing: string;
     remove: string;
     studioTitle: string;
     studioDenied: string;
@@ -192,6 +219,7 @@ export const dict: Record<Locale, Dict> = {
       secondary: 'Как снять',
       proof: ['2 фото сбоку', '4 угла', 'Можно без входа'],
       sample: 'Пример разбора',
+      samplePoses: ['В коридоре', 'Седло высоко', 'Седло низко', 'Далеко до руля', 'Слишком прямо'],
       benefitsKicker: 'Зачем',
       benefitsTitle: 'Хорошая посадка чувствуется сразу',
       benefits: [
@@ -217,6 +245,11 @@ export const dict: Record<Locale, Dict> = {
       ctaText: 'Приходи на посадку: посмотрим, подстроим седло, руль и шипы — и проедем, пока не станет хорошо.',
       ctaPrimary: 'Записаться',
       ctaSecondary: 'Сначала фото',
+      supportTitle: 'Поддержите BikeTrue',
+      supportText: 'Разбор кадра бесплатный. Поддержка помогает держать его открытым.',
+      supportCustom: 'Другая сумма',
+      supportButton: 'Поддержать {amount} ₽',
+      supportPending: 'Ссылка на оплату ещё не подключена.',
     },
     angles: {
       knee: { label: 'Колено', range: '140–150°', where: 'шатун внизу' },
@@ -360,9 +393,12 @@ export const dict: Record<Locale, Dict> = {
       title: 'Кабинет',
       leadOut: 'Войди, чтобы сохранить мерки, велосипеды и разборы.',
       leadIn: 'Здесь мерки, велосипеды и сохранённые разборы.',
+      signin: 'Войти',
+      signinLead: 'Google, Яндекс или Telegram. Первый раз кабинет создаётся сам, потом этот же вход его открывает.',
       google: 'Войти через Google',
       yandex: 'Войти через Яндекс',
       telegram: 'Войти через Telegram',
+      telegramLocal: 'Telegram на этом адресе не входит. Кнопка появится, когда у бота в BotFather будет указан домен сайта.',
       connect: 'Подключить',
       logout: 'Выйти',
       delete: 'Удалить кабинет',
@@ -375,6 +411,11 @@ export const dict: Record<Locale, Dict> = {
       bikes: 'Велосипеды',
       readings: 'Разборы',
       rider: 'Кто едет',
+      riderLook: 'Вид кабинета следует за тем, кто едет. Младшая группа чуть круглее, юниоры резче, взрослые спокойнее.',
+      theme: 'Тема',
+      themeLight: 'Светлая',
+      themeDark: 'Тёмная',
+      cabinetLoading: 'Открываю кабинет…',
       child: 'Ребёнок',
       teen: 'Подросток',
       adult: 'Взрослый',
@@ -391,10 +432,60 @@ export const dict: Record<Locale, Dict> = {
       saddle: 'Высота седла от каретки, мм',
       stem: 'Вынос, мм',
       drop: 'Падение руля, мм',
+      measureHint: 'Как измерить',
+      mmRange: {
+        crank: 'Шатун — от 120 до 180 мм.',
+        saddle: 'Высота седла — от 400 до 1000 мм.',
+        stem: 'Вынос — от 30 до 150 мм.',
+        drop: 'Падение руля — от −150 до 200 мм.',
+      },
+      mmCm: 'Если это сантиметры, напиши {mm}.',
+      measures: {
+        crank: {
+          title: 'Шатун',
+          text: 'Длина рычага от оси каретки до оси педали.',
+          steps: [
+            'Один конец рулетки — в центр болта, где сходятся шатуны.',
+            'Второй — в центр оси педали.',
+            'Меряй по прямой. Часто число уже написано на шатуне: 165, 170 или 172,5.',
+          ],
+        },
+        saddle: {
+          title: 'Высота седла',
+          text: 'Прямая от оси каретки до верха седла.',
+          steps: [
+            'Рулетка от центра кареточного болта.',
+            'До верхней поверхности седла, по его середине.',
+            'Седло оставь так, как ездишь. Не до рельс и не вдоль подседельной трубы.',
+          ],
+        },
+        stem: {
+          title: 'Вынос',
+          text: 'Расстояние между рулём и рулевой трубой.',
+          steps: [
+            'Один конец — центр хомута на рулевой трубе.',
+            'Другой — центр хомута, который держит руль.',
+            'По прямой между центрами. Число часто выбито на выносе: 80, 90, 100.',
+          ],
+        },
+        drop: {
+          title: 'Падение руля',
+          text: 'Насколько руль ниже седла. Если руль выше — число с минусом.',
+          steps: [
+            'Велосипед стоит прямо. Замерь высоту верха седла от пола.',
+            'Замерь высоту верха руля от пола, посередине руля.',
+            'Из высоты седла вычти высоту руля. Руль выше седла — поставь минус.',
+          ],
+        },
+      },
       bikeNote: 'Размеры сохранены. На углы с фото они пока не влияют.',
       addBike: 'Добавить велосипед',
       noBike: 'Без велосипеда',
       empty: 'Пока пусто',
+      readingBack: 'К списку',
+      readingToday: 'Это сегодняшние размеры и мерки. В день этого кадра они не сохранялись.',
+      readingNone: 'В день кадра размеры не сохранялись.',
+      readingMissing: 'не записано',
       remove: 'Удалить',
       studioTitle: 'Разборы людей',
       studioDenied: 'Этот экран для мастеров.',
@@ -432,6 +523,7 @@ export const dict: Record<Locale, Dict> = {
       secondary: 'How to shoot',
       proof: ['2 side photos', '4 angles', 'No account needed'],
       sample: 'Sample reading',
+      samplePoses: ['In the range', 'Saddle high', 'Saddle low', 'Too much reach', 'Too upright'],
       benefitsKicker: 'Why',
       benefitsTitle: 'A good fit is felt right away',
       benefits: [
@@ -457,6 +549,11 @@ export const dict: Record<Locale, Dict> = {
       ctaText: 'Come for a fitting: we look, adjust saddle, bars and cleats — and ride until it feels right.',
       ctaPrimary: 'Book',
       ctaSecondary: 'Photo first',
+      supportTitle: 'Support BikeTrue',
+      supportText: 'The frame check is free. Support keeps it open.',
+      supportCustom: 'Other amount',
+      supportButton: 'Support {amount} ₽',
+      supportPending: 'The payment link is not connected yet.',
     },
     angles: {
       knee: { label: 'Knee', range: '140–150°', where: 'crank down' },
@@ -600,9 +697,12 @@ export const dict: Record<Locale, Dict> = {
       title: 'Account',
       leadOut: 'Sign in to save measurements, bikes and readings.',
       leadIn: 'Measurements, bikes and saved readings are here.',
+      signin: 'Sign in',
+      signinLead: 'Google, Yandex or Telegram. The first time a cabinet is created. After that the same sign-in opens it.',
       google: 'Sign in with Google',
       yandex: 'Sign in with Yandex',
       telegram: 'Sign in with Telegram',
+      telegramLocal: 'Telegram will not sign in on this address. The button appears once the bot has the site domain in BotFather.',
       connect: 'Connect',
       logout: 'Sign out',
       delete: 'Delete account',
@@ -615,6 +715,11 @@ export const dict: Record<Locale, Dict> = {
       bikes: 'Bikes',
       readings: 'Readings',
       rider: 'Who is riding',
+      riderLook: 'The cabinet follows who is riding. Juniors are rounder, teens sharper, adults calmer.',
+      theme: 'Theme',
+      themeLight: 'Light',
+      themeDark: 'Dark',
+      cabinetLoading: 'Opening the cabinet…',
       child: 'Child',
       teen: 'Teen',
       adult: 'Adult',
@@ -631,10 +736,60 @@ export const dict: Record<Locale, Dict> = {
       saddle: 'Saddle height from the bottom bracket, mm',
       stem: 'Stem, mm',
       drop: 'Bar drop, mm',
+      measureHint: 'How to measure',
+      mmRange: {
+        crank: 'Crank is 120 to 180 mm.',
+        saddle: 'Saddle height is 400 to 1000 mm.',
+        stem: 'Stem is 30 to 150 mm.',
+        drop: 'Bar drop is −150 to 200 mm.',
+      },
+      mmCm: 'If that was centimetres, write {mm}.',
+      measures: {
+        crank: {
+          title: 'Crank',
+          text: 'The arm from the bottom-bracket axle to the pedal axle.',
+          steps: [
+            'One end of the tape is the centre of the bolt where the cranks meet.',
+            'The other is the centre of the pedal axle.',
+            'Measure in a straight line. The number is often printed on the arm: 165, 170 or 172.5.',
+          ],
+        },
+        saddle: {
+          title: 'Saddle height',
+          text: 'A straight line from the bottom-bracket axle to the top of the saddle.',
+          steps: [
+            'Start the tape at the centre of the bottom-bracket bolt.',
+            'End at the top surface of the saddle, at its middle.',
+            'Leave the saddle where you ride. Not the rails, and not along the seat tube.',
+          ],
+        },
+        stem: {
+          title: 'Stem',
+          text: 'The distance between the bar and the steerer.',
+          steps: [
+            'One end is the centre of the clamp on the steerer tube.',
+            'The other is the centre of the clamp that holds the bar.',
+            'Straight between the centres. The number is often stamped on the stem: 80, 90, 100.',
+          ],
+        },
+        drop: {
+          title: 'Bar drop',
+          text: 'How far the bar sits below the saddle. If the bar is higher, the number is negative.',
+          steps: [
+            'Bike upright. Measure the top of the saddle from the floor.',
+            'Measure the top of the bar from the floor, at the middle of the bar.',
+            'Subtract the bar height from the saddle height. Bar above the saddle — write a minus.',
+          ],
+        },
+      },
       bikeNote: 'Sizes are saved. They do not affect the angles from the photo yet.',
       addBike: 'Add a bike',
       noBike: 'No bike',
       empty: 'Nothing here yet',
+      readingBack: 'Back to the list',
+      readingToday: 'These are today’s sizes and measurements. They were not saved with this frame.',
+      readingNone: 'Sizes were not saved with this frame.',
+      readingMissing: 'not recorded',
       remove: 'Delete',
       studioTitle: 'Readings of people',
       studioDenied: 'This screen is for fitters.',

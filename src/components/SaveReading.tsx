@@ -4,6 +4,7 @@ import { apiUrl, cabinetFetch } from '../lib/cabinet-client';
 import type { FitId } from '../lib/fits';
 import { pathFor } from '../lib/paths';
 import type { AngleReading } from '../lib/reading';
+import Pick from './Pick';
 
 type Bike = { id: number; name: string; fit: FitId };
 
@@ -109,17 +110,14 @@ export default function SaveReading({
     }
   }
 
+  const options = [
+    ...bikes.map((bike) => ({ value: String(bike.id), label: bike.name })),
+    { value: '', label: t.noBike },
+  ];
+
   return (
-    <form onSubmit={submit}>
-      <label>
-        {t.pickBike}
-        <select value={choice} onChange={(event) => setChoice(event.target.value)}>
-          {bikes.map((bike) => (
-            <option key={bike.id} value={String(bike.id)}>{bike.name}</option>
-          ))}
-          <option value="">{t.noBike}</option>
-        </select>
-      </label>
+    <form className="save-reading" onSubmit={submit}>
+      <Pick label={t.pickBike} value={choice} options={options} onChange={setChoice} />
       <button className="button" type="submit">{t.saveReading}</button>
       {status === 'saved' && <p className="note" role="status">{t.saved}</p>}
       {status === 'error' && <p className="warn" role="alert">{t.error}</p>}

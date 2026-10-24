@@ -191,10 +191,12 @@ export default function Analyzer({ locale }: { locale: Locale }) {
           <>
             <p className="note">{t.analyze.kept}</p>
             <AngleList locale={locale} reading={reading} keys={['knee', 'back', 'arm', 'hip']} />
-            <div className="actions">
-              <a className="button" href={pathFor(locale, '/visit')}>{t.analyze.toVisit}</a>
+            <div className="analyzer-foot">
+              <div className="actions">
+                <a className="button" href={pathFor(locale, '/visit')}>{t.analyze.toVisit}</a>
+              </div>
+              <SaveReading locale={locale} reading={reading} hadTop={hadTop} />
             </div>
-            <SaveReading locale={locale} reading={reading} hadTop={hadTop} />
           </>
         ) : null}
       </div>
@@ -234,14 +236,16 @@ export default function Analyzer({ locale }: { locale: Locale }) {
           onFile={(file) => file && measure('top', file, true)}
         />
       </div>
-      <p className="note">{t.disclaimer}</p>
-      <div className="actions">
-        <a className="button" href={pathFor(locale, '/visit')}>{t.analyze.toVisit}</a>
-        {bottomScene || topScene || hasReading ? (
-          <button className="button ghost" type="button" onClick={reset}>{t.analyze.reset}</button>
-        ) : null}
+      <div className="analyzer-foot">
+        <p className="note">{t.disclaimer}</p>
+        <div className="actions">
+          <a className="button" href={pathFor(locale, '/visit')}>{t.analyze.toVisit}</a>
+          {bottomScene || topScene || hasReading ? (
+            <button className="button ghost" type="button" onClick={reset}>{t.analyze.reset}</button>
+          ) : null}
+        </div>
+        {hasReading ? <SaveReading locale={locale} reading={reading} hadTop={hadTop} /> : null}
       </div>
-      {hasReading ? <SaveReading locale={locale} reading={reading} hadTop={hadTop} /> : null}
     </div>
   );
 }

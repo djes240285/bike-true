@@ -1,5 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
+import SampleMeter from '../components/SampleMeter';
+import Support from '../components/Support';
 import { dict, type Locale } from '../i18n';
 import { pathFor } from '../lib/paths';
 
@@ -9,12 +11,6 @@ interface Props {
 const { locale } = Astro.props;
 const t = dict[locale];
 const angles = ['knee', 'back', 'arm', 'hip'] as const;
-const sample = [
-  ['knee', '146°', '68%'],
-  ['back', '42°', '46%'],
-  ['arm', '158°', '72%'],
-  ['hip', '62°', '58%'],
-] as const;
 const benefitIcons = [
   'M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10Z',
   'M13 2 4 14h7l-1 8 9-12h-7l1-8Z',
@@ -35,6 +31,7 @@ const benefitIcons = [
       <ul class="proof">
         {t.home.proof.map((item) => <li>{item}</li>)}
       </ul>
+      <SampleMeter client:load locale={locale} />
     </div>
     <aside class="hero-visual" aria-hidden="true">
       <video
@@ -47,18 +44,6 @@ const benefitIcons = [
         playsinline
         preload="auto"
       ></video>
-      <div class="meter">
-        <header>
-          <span class="live"><i></i>{t.home.sample}</span>
-        </header>
-        {sample.map(([key, value, width]) => (
-          <div class="meter-row">
-            <span>{t.angles[key].label}</span>
-            <b>{value}</b>
-            <i><span style={`--p:${width}`}></span></i>
-          </div>
-        ))}
-      </div>
     </aside>
     <script is:inline>
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -156,4 +141,5 @@ const benefitIcons = [
       <a class="button ghost" href={pathFor(locale, '/analyze')}>{t.home.ctaSecondary}</a>
     </div>
   </section>
+  <Support client:load locale={locale} />
 </Base>
