@@ -1,6 +1,8 @@
 ---
 import '../styles/global.css';
 import '@fontsource-variable/inter';
+import AppChrome from '../components/AppChrome.astro';
+import PwaHead from '../components/PwaHead.astro';
 import { dict, type Locale } from '../i18n';
 import { otherLocale, pathFor } from '../lib/paths';
 
@@ -24,11 +26,15 @@ const links = [
 <html lang={locale}>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <PwaHead />
     <title>{t.metaTitle}</title>
     <meta name="description" content={t.metaDescription} />
-    <link rel="icon" href="/favicon.svg" />
-    <script is:inline>document.documentElement.classList.add('js');</script>
+    <script is:inline>
+      document.documentElement.classList.add('js');
+      if (matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
+        document.documentElement.classList.add('standalone');
+      }
+    </script>
   </head>
   <body>
     <div class="shell">
@@ -86,5 +92,6 @@ const links = [
         blocks.forEach((block) => block.classList.add('is-in'));
       }
     </script>
+    <AppChrome locale={locale} />
   </body>
 </html>

@@ -1,12 +1,24 @@
 import { loadEnv } from 'vite';
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
+import { writeServiceWorker } from './scripts/service-worker.mjs';
 
 const site = process.env.URL || process.env.SITE_URL || 'http://localhost:4321';
 
 export default defineConfig({
   site,
-  integrations: [react()],
+  integrations: [
+    react(),
+    {
+      name: 'biketrue-pwa',
+      hooks: {
+        'astro:build:done': async ({ dir }) => {
+          const { fileURLToPath } = await import('node:url');
+          await writeServiceWorker(fileURLToPath(dir));
+        },
+      },
+    },
+  ],
   vite: {
     plugins: [
       {

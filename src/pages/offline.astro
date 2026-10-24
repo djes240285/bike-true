@@ -1,0 +1,52 @@
+---
+import PwaHead from '../components/PwaHead.astro';
+---
+
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <PwaHead />
+    <meta name="robots" content="noindex" />
+    <title>Нет сети · BikeTrue</title>
+    <style is:inline>
+      :root { color-scheme: light; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));
+        color: #1c1917;
+        background:
+          radial-gradient(900px 420px at 80% -10%, rgba(251, 191, 36, 0.28), transparent 60%),
+          #fffdf8;
+        font-family: Inter, "Segoe UI", sans-serif;
+        line-height: 1.5;
+      }
+      main { width: min(460px, 100%); }
+      h1 { margin: 0 0 12px; font-size: 40px; letter-spacing: -0.04em; font-weight: 600; }
+      p { margin: 0 0 12px; color: #44403c; }
+      button {
+        margin-top: 12px;
+        min-height: 44px;
+        padding: 12px 18px;
+        border: 0;
+        border-radius: 999px;
+        background: #1c1917;
+        color: white;
+        font: inherit;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Нет сети</h1>
+      <p>BikeTrue на месте. Страницы, которые уже открывались, и последний разбор остаются на устройстве.</p>
+      <p>You’re offline. Pages you’ve already opened, and the last reading, stay on this device.</p>
+      <button type="button" onclick="location.reload()">Обновить · Retry</button>
+    </main>
+  </body>
+</html>

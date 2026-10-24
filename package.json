@@ -14,7 +14,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "test": "bun test src/lib"
+    "test": "bun test src/lib",
+    "icons": "bun scripts/render-icons.ts"
   },
   "dependencies": {
     "@astrojs/react": "^5.0.6",
@@ -27,6 +28,7 @@
     "react-dom": "^19.2.6"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3"
   }

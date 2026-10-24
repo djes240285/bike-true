@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { cookieValue, gateToken, loginDecision, safeNext, tokensMatch } from './gate';
+import { cookieValue, gateToken, isOpenPath, isPwaAsset, loginDecision, safeNext, tokensMatch } from './gate';
 
 describe('gate', () => {
   test('путь после входа остаётся на сайте', () => {
@@ -9,6 +9,16 @@ describe('gate', () => {
     expect(safeNext('//evil.test')).toBe('/');
     expect(safeNext('/enter?next=/')).toBe('/');
     expect(safeNext(null)).toBe('/');
+  });
+
+  test('иконки и оболочка открыты, страницы сайта нет', () => {
+    expect(isOpenPath('/enter')).toBe(true);
+    expect(isPwaAsset('/sw.js')).toBe(true);
+    expect(isPwaAsset('/manifest.webmanifest')).toBe(true);
+    expect(isPwaAsset('/icons/icon-192.png')).toBe(true);
+    expect(isPwaAsset('/offline/index.html')).toBe(true);
+    expect(isOpenPath('/analyze')).toBe(false);
+    expect(isPwaAsset('/icons/../analyze')).toBe(false);
   });
 
   test('кука читается по имени', () => {

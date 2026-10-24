@@ -51,8 +51,15 @@ export function safeNext(raw: string | null | undefined): string {
   return value;
 }
 
+export function isPwaAsset(pathname: string): boolean {
+  if (pathname.includes('..')) return false;
+  if (pathname === '/favicon.svg' || pathname === '/manifest.webmanifest' || pathname === '/sw.js') return true;
+  if (pathname === '/offline' || pathname === '/offline/' || pathname === '/offline/index.html') return true;
+  return pathname.startsWith('/icons/');
+}
+
 export function isOpenPath(pathname: string): boolean {
-  return pathname === '/enter' || pathname === '/enter/' || pathname === '/favicon.svg';
+  return pathname === '/enter' || pathname === '/enter/' || isPwaAsset(pathname);
 }
 
 export async function loginDecision(sitePassword: string, given: string, nextRaw: string) {

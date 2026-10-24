@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { dict, type Locale } from '../i18n';
 import { bandFor, type AngleKey } from '../lib/advice';
+import { readReading, writeReading } from '../lib/device';
+import { clearFrames, loadFrame, saveFrame } from '../lib/frames';
 import { pathFor } from '../lib/paths';
 import { crowd, readFrame, toPixels, type AngleReading, type Frame, type Point } from '../lib/reading';
 import { idealBottom, idealTop, jointsOf, moved } from '../lib/target';
 import PoseStage, { type Scene } from './PoseStage';
-
-const STORAGE_KEY = 'biketrue.reading';
 const WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm';
 const MODEL =
   'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
@@ -44,18 +44,20 @@ const EXAMPLES: Record<'bottom' | 'top', { src: string; joints: ExamplePose }> =
 const LABEL_AT: Record<AngleKey, keyof ExamplePose> = { knee: 'knee', back: 'hip', arm: 'elbow', hip: 'hip' };
 
 const emptyReading: AngleReading = { knee: null, back: null, arm: null, hip: null };
+const savedReading = readReading();
 
 export default function Analyzer({ locale }: { locale: Locale }) {
   const t = dict[locale];
   const landmarker = useRef<PoseDetect | null>(null);
+  const measureRef = useRef<(frame: Frame, file: Blob, persist: boolean) => Promise<void>>(async () => undefined);
   const [modelError, setModelError] = useState('');
   const [loading, setLoading] = useState(true);
   const [bottom, setBottom] = useState<Status>('empty');
   const [top, setTop] = useState<Status>('empty');
   const [bottomScene, setBottomScene] = useState<Scene | null>(null);
   const [topScene, setTopScene] = useState<Scene | null>(null);
-  const [reading, setReading] = useState<AngleReading>(emptyReading);
-  const [hadTop, setHadTop] = useState(false);
+  const [reading, setReading] = useState<AngleReading>(savedReading?.reading ?? emptyReading);
+  const [hadTop, setHadTop] = useState(savedReading?.hadTop ?? false);
 
   useEffect(() => {
     let cancelled = false;
@@ -88,16 +90,29 @@ export default function Analyzer({ locale }: { locale: Locale }) {
   }, [t.analyze.browser]);
 
   useEffect(() => {
-    const hasNumber = Object.values(reading).some((value) => typeof value === 'number');
-    if (!hasNumber) {
-      sessionStorage.removeItem(STORAGE_KEY);
-      return;
-    }
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...reading, hadTopPhoto: hadTop }));
+    writeReading(reading, hadTop);
   }, [reading, hadTop]);
 
-  async function onFile(frame: Frame, file: File | undefined) {
-    if (!file || !landmarker.current) return;
+  useEffect(() => {
+    if (loading || !landmarker.current) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const [bottomBlob, topBlob] = await Promise.all([loadFrame('bottom'), loadFrame('top')]);
+        if (cancelled || !landmarker.current) return;
+        if (bottomBlob) await measureRef.current('bottom', bottomBlob, false);
+        if (!cancelled && topBlob) await measureRef.current('top', topBlob, false);
+      } catch {
+        /* angles already restored */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loading]);
+
+  async function measure(frame: Frame, file: Blob, persist: boolean) {
+    if (!landmarker.current) return;
     const setStatus = frame === 'bottom' ? setBottom : setTop;
     const setScene = frame === 'bottom' ? setBottomScene : setTopScene;
     setStatus('busy');
@@ -105,7 +120,13 @@ export default function Analyzer({ locale }: { locale: Locale }) {
       previous?.image.close();
       return null;
     });
-    const image = await createImageBitmap(file);
+    let image: ImageBitmap;
+    try {
+      image = await createImageBitmap(file);
+    } catch {
+      setStatus('retake');
+      return;
+    }
     const canvas = document.createElement('canvas');
     canvas.width = image.width;
     canvas.height = image.height;
@@ -137,7 +158,14 @@ export default function Analyzer({ locale }: { locale: Locale }) {
     setReading((value) => ({ ...value, ...stripNulls(next) }));
     if (frame === 'top') setHadTop(true);
     setStatus('done');
+    if (!persist) return;
+    try {
+      await saveFrame(frame, file);
+    } catch {
+      /* quota or private mode */
+    }
   }
+  measureRef.current = measure;
 
   function reset() {
     setReading(emptyReading);
@@ -148,10 +176,28 @@ export default function Analyzer({ locale }: { locale: Locale }) {
     topScene?.image.close();
     setBottomScene(null);
     setTopScene(null);
-    sessionStorage.removeItem(STORAGE_KEY);
+    writeReading(emptyReading, false);
+    void clearFrames().catch(() => undefined);
   }
 
-  if (modelError) return <p className="warn">{modelError}</p>;
+  const hasReading = Object.values(reading).some((value) => typeof value === 'number');
+
+  if (modelError) {
+    return (
+      <div className="analyzer">
+        <p className="warn">{modelError}</p>
+        {hasReading ? (
+          <>
+            <p className="note">{t.analyze.kept}</p>
+            <AngleList locale={locale} reading={reading} keys={['knee', 'back', 'arm', 'hip']} />
+            <div className="actions">
+              <a className="button" href={pathFor(locale, '/visit')}>{t.analyze.toVisit}</a>
+            </div>
+          </>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="analyzer">
@@ -169,7 +215,7 @@ export default function Analyzer({ locale }: { locale: Locale }) {
           reading={reading}
           keys={['knee', 'back', 'arm']}
           disabled={loading}
-          onFile={(file) => onFile('bottom', file)}
+          onFile={(file) => file && measure('bottom', file, true)}
         />
         <FramePanel
           letter="B"
@@ -183,13 +229,13 @@ export default function Analyzer({ locale }: { locale: Locale }) {
           reading={reading}
           keys={['hip']}
           disabled={loading}
-          onFile={(file) => onFile('top', file)}
+          onFile={(file) => file && measure('top', file, true)}
         />
       </div>
       <p className="note">{t.disclaimer}</p>
       <div className="actions">
         <a className="button" href={pathFor(locale, '/visit')}>{t.analyze.toVisit}</a>
-        {bottomScene || topScene ? (
+        {bottomScene || topScene || hasReading ? (
           <button className="button ghost" type="button" onClick={reset}>{t.analyze.reset}</button>
         ) : null}
       </div>
@@ -284,18 +330,27 @@ function FramePanel({
       {status === 'retake' ? <p className="warn">{copy.retake}</p> : null}
       {status === 'crowd' ? <p className="warn">{copy.crowd}</p> : null}
 
-      {scene ? (
-        <AngleList locale={locale} reading={reading} keys={keys} />
-      ) : (
-        <div className="measures">
-          <span>{copy.measures}</span>
-          {keys.map((key) => (
-            <b key={key}>
-              {t.angles[key].label} <i>{t.angles[key].range}</i>
-            </b>
-          ))}
-        </div>
-      )}
+      {(() => {
+        const saved = !scene && keys.some((key) => typeof reading[key] === 'number');
+        if (!scene && !saved) {
+          return (
+            <div className="measures">
+              <span>{copy.measures}</span>
+              {keys.map((key) => (
+                <b key={key}>
+                  {t.angles[key].label} <i>{t.angles[key].range}</i>
+                </b>
+              ))}
+            </div>
+          );
+        }
+        return (
+          <>
+            {saved ? <p className="note">{copy.kept}</p> : null}
+            <AngleList locale={locale} reading={reading} keys={keys} />
+          </>
+        );
+      })()}
     </section>
   );
 }

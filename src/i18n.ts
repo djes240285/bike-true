@@ -69,6 +69,7 @@ export type Dict = {
     noJoints: string;
     hipMissing: string;
     reset: string;
+    kept: string;
     toVisit: string;
     browser: string;
     bottomHint: string;
@@ -113,6 +114,16 @@ export type Dict = {
   about: { title: string; paragraphs: string[] };
   faq: { title: string; items: { q: string; a: string }[] };
   privacy: { title: string; paragraphs: string[] };
+  pwa: {
+    notice: string;
+    noticeOk: string;
+    install: string;
+    installAndroid: string;
+    installIos: string;
+    later: string;
+    update: string;
+    updateGo: string;
+  };
   footer: string;
 };
 
@@ -232,6 +243,7 @@ export const dict: Record<Locale, Dict> = {
       noJoints: 'Этого угла на кадре нет.',
       hipMissing: 'Нужен второй кадр, шатун вверху.',
       reset: 'Начать заново',
+      kept: 'Углы прошлого разбора на этом устройстве. Фото вернётся само, если оно ещё здесь.',
       toVisit: 'Записаться на посадку',
       browser: 'Этому экрану нужен свежий браузер.',
       ghostNow: 'Сейчас',
@@ -288,8 +300,20 @@ export const dict: Record<Locale, Dict> = {
       title: 'Приватность',
       paragraphs: [
         'Фото не покидает твоё устройство — разбор идёт прямо в браузере.',
+        'Последние углы, фото разбора и черновик записи остаются на этом устройстве, чтобы не начинать заново. Стереть их можно в настройках браузера, в данных сайта.',
+        'Если сайт закрыт паролем, браузер хранит техническую куки входа. Рекламных и аналитических куки нет.',
         'Из записи мы получаем только то, что ты сам написал, и используем это, чтобы с тобой связаться.',
       ],
+    },
+    pwa: {
+      notice: 'На устройстве остаются углы, фото разбора и черновик записи. Если сайт закрыт паролем — ещё техническая куки входа. Рекламы и слежки нет.',
+      noticeOk: 'Хорошо',
+      install: 'Поставить',
+      installAndroid: 'BikeTrue можно поставить на экран телефона или планшета — как обычное приложение.',
+      installIos: 'Поставь BikeTrue на экран: «Поделиться», затем «На экран Домой».',
+      later: 'Не сейчас',
+      update: 'Есть новая версия BikeTrue.',
+      updateGo: 'Обновить',
     },
     footer: 'BikeTrue — посадка, в которой хочется ехать.',
   },
@@ -408,6 +432,7 @@ export const dict: Record<Locale, Dict> = {
       noJoints: 'This angle is not on the frame.',
       hipMissing: 'A second frame is needed, crank at the top.',
       reset: 'Start over',
+      kept: 'Angles from your last analysis are on this device. The photo comes back if the browser still has it.',
       toVisit: 'Book a fitting',
       browser: 'This screen needs a recent browser.',
       ghostNow: 'Now',
@@ -464,8 +489,20 @@ export const dict: Record<Locale, Dict> = {
       title: 'Privacy',
       paragraphs: [
         'The photo never leaves your device — the analysis runs in your browser.',
+        'The latest angles, analysis photos, and booking draft stay on this device so you don’t start over. Clear them in the browser’s site data.',
+        'If the site is password-locked, the browser keeps a sign-in cookie. There are no advertising or analytics cookies.',
         'From a booking we only get what you write yourself, and use it to get in touch.',
       ],
+    },
+    pwa: {
+      notice: 'This device keeps your angles, analysis photos, and booking draft. A sign-in cookie is used only if the site is locked. No ads or tracking.',
+      noticeOk: 'OK',
+      install: 'Install',
+      installAndroid: 'Install BikeTrue on your phone or tablet, like any other app.',
+      installIos: 'Add BikeTrue to your Home Screen: Share, then Add to Home Screen.',
+      later: 'Not now',
+      update: 'A new version of BikeTrue is ready.',
+      updateGo: 'Update',
     },
     footer: 'BikeTrue — a position you want to keep riding.',
   },

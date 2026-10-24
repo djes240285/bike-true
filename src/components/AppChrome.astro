@@ -1,0 +1,38 @@
+---
+import { dict, type Locale } from '../i18n';
+import { pathFor } from '../lib/paths';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = dict[locale];
+---
+
+<div class="dock-stack" id="bt-docks">
+  <div class="dock" id="bt-notice" hidden>
+    <p>{t.pwa.notice}</p>
+    <div class="dock-actions">
+      <a class="button ghost" href={pathFor(locale, '/privacy')}>{t.privacy.title}</a>
+      <button class="button" type="button" id="bt-notice-ok">{t.pwa.noticeOk}</button>
+    </div>
+  </div>
+  <div class="dock" id="bt-install" hidden data-ios={t.pwa.installIos} data-android={t.pwa.installAndroid}>
+    <p id="bt-install-text">{t.pwa.installAndroid}</p>
+    <div class="dock-actions">
+      <button class="button ghost" type="button" id="bt-install-dismiss">{t.pwa.later}</button>
+      <button class="button" type="button" id="bt-install-go" hidden>{t.pwa.install}</button>
+    </div>
+  </div>
+  <div class="dock" id="bt-update" hidden>
+    <p>{t.pwa.update}</p>
+    <div class="dock-actions">
+      <button class="button" type="button" id="bt-update-go">{t.pwa.updateGo}</button>
+    </div>
+  </div>
+</div>
+<script>
+  import { setupChrome } from '../scripts/chrome';
+  setupChrome();
+</script>

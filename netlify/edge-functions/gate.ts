@@ -1,4 +1,4 @@
-import { cookieValue, gateCookie, gateToken, isOpenPath, loginDecision, tokensMatch } from '../../src/lib/gate.ts';
+import { cookieValue, gateCookie, gateToken, isOpenPath, isPwaAsset, loginDecision, tokensMatch } from '../../src/lib/gate.ts';
 
 declare const Netlify: { env: { get: (name: string) => string | undefined } };
 
@@ -21,6 +21,7 @@ export default async (request: Request, context: EdgeContext) => {
     return redirect(url, decision.next, gateCookie(decision.token, true));
   }
 
+  if (isPwaAsset(url.pathname)) return context.next();
   if (isOpenPath(url.pathname)) return seal(await context.next());
   if (!password) return redirect(url, '/enter?error=closed');
 
@@ -50,5 +51,9 @@ function redirect(url: URL, location: string, cookie?: string) {
 function seal(response: Response) {
   const headers = new Headers(response.headers);
   headers.set('cache-control', 'private, no-store');
+  headers.set('x-content-type-options', 'nosniff');
+  headers.set('referrer-policy', 'strict-origin-when-cross-origin');
+  headers.set('x-frame-options', 'DENY');
+  headers.set('permissions-policy', 'geolocation=(), microphone=()');
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }

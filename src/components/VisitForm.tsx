@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { dict, type Locale } from '../i18n';
+import { VISIT_KEY, parseVisitDraft, readReading, type VisitDraft } from '../lib/device';
 import { pathFor } from '../lib/paths';
 import type { AngleReading } from '../lib/reading';
 import { flagsFromEnv } from '../lib/visit';
-
-const STORAGE_KEY = 'biketrue.reading';
 const TIMES = ['10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'] as const;
 
 type Flags = ReturnType<typeof flagsFromEnv>;
@@ -45,6 +44,10 @@ export default function VisitForm({ locale }: { locale: Locale }) {
   const [dayChoice, setDayChoice] = useState<DayChoice>('');
   const [customDate, setCustomDate] = useState('');
   const [time, setTime] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [comment, setComment] = useState('');
+  const [draftReady, setDraftReady] = useState(false);
 
   const today = useMemo(() => {
     const now = new Date();
@@ -63,17 +66,18 @@ export default function VisitForm({ locale }: { locale: Locale }) {
   const whenLabel = formatWhen(locale, dateIso, time);
 
   useEffect(() => {
-    const saved = sessionStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const hasNumber = ['knee', 'back', 'arm', 'hip'].some((key) => typeof parsed[key] === 'number');
-        if (hasNumber) setReading(parsed);
-        else sessionStorage.removeItem(STORAGE_KEY);
-      } catch {
-        sessionStorage.removeItem(STORAGE_KEY);
-      }
+    const saved = readReading();
+    if (saved) setReading({ ...saved.reading, hadTopPhoto: saved.hadTop });
+    const draft = parseVisitDraft(safeGet(VISIT_KEY));
+    if (draft) {
+      setName(draft.name);
+      setPhone(draft.phone);
+      setComment(draft.comment);
+      setDayChoice(draft.dayChoice);
+      setCustomDate(draft.customDate);
+      setTime(draft.time);
     }
+    setDraftReady(true);
     fetch('/api/flags')
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
@@ -82,11 +86,18 @@ export default function VisitForm({ locale }: { locale: Locale }) {
       .catch(() => undefined);
   }, []);
 
+  useEffect(() => {
+    if (!draftReady) return;
+    const draft: VisitDraft = { name, phone, comment, dayChoice, customDate, time };
+    if (status === 'sent') {
+      safeRemove(VISIT_KEY);
+      return;
+    }
+    safeSet(VISIT_KEY, JSON.stringify(draft));
+  }, [draftReady, name, phone, comment, dayChoice, customDate, time, status]);
+
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const name = String(form.get('name') || '');
-    const phone = String(form.get('phone') || '');
     if (!name.trim() || !phone.trim()) {
       setStatus('error');
       setError(t.required);
@@ -101,7 +112,7 @@ export default function VisitForm({ locale }: { locale: Locale }) {
         name,
         phone,
         when: whenLabel,
-        comment: String(form.get('comment') || ''),
+        comment,
         locale,
         angles: reading ?? { knee: null, back: null, arm: null, hip: null },
         hadTopPhoto: reading?.hadTopPhoto === true,
@@ -138,11 +149,11 @@ export default function VisitForm({ locale }: { locale: Locale }) {
       ) : null}
       <label>
         {t.name}
-        <input name="name" autoComplete="name" required />
+        <input name="name" autoComplete="name" required value={name} onChange={(event) => setName(event.target.value)} />
       </label>
       <label>
         {t.phone}
-        <input name="phone" autoComplete="tel" required />
+        <input name="phone" autoComplete="tel" inputMode="tel" required value={phone} onChange={(event) => setPhone(event.target.value)} />
       </label>
 
       <fieldset className="when-field">
@@ -201,7 +212,7 @@ export default function VisitForm({ locale }: { locale: Locale }) {
 
       <label>
         {t.comment}
-        <textarea name="comment" rows={4} />
+        <textarea name="comment" rows={4} value={comment} onChange={(event) => setComment(event.target.value)} />
       </label>
       <button className="button" type="submit" disabled={status === 'sending' || status === 'sent'}>
         {status === 'sending' ? t.sending : t.send}
@@ -213,4 +224,28 @@ export default function VisitForm({ locale }: { locale: Locale }) {
       </p>
     </form>
   );
+}
+
+function safeGet(key: string) {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeSet(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* private mode */
+  }
+}
+
+function safeRemove(key: string) {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    /* private mode */
+  }
 }
