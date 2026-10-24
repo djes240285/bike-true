@@ -140,7 +140,15 @@ export function setupChrome() {
     });
     document.getElementById('bt-update-go')?.addEventListener('click', () => {
       allowReload = true;
-      registration.waiting?.postMessage('skip-waiting');
+      const worker = registration.waiting;
+      if (!worker) {
+        location.reload();
+        return;
+      }
+      worker.postMessage('skip-waiting');
+      window.setTimeout(() => {
+        if (!reloading) location.reload();
+      }, 1200);
     });
   }).catch(() => undefined);
 }

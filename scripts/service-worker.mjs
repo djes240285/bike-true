@@ -64,7 +64,13 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('message', (event) => {
-  if (event.data === 'skip-waiting') self.skipWaiting();
+  if (event.data !== 'skip-waiting') return;
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((key) => key !== MEDIA).map((key) => caches.delete(key))))
+      .then(() => self.skipWaiting()),
+  );
 });
 
 self.addEventListener('fetch', (event) => {
