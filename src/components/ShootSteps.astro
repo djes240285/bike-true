@@ -6,12 +6,10 @@ interface Props {
   nextHref: string;
 }
 const { how, nextHref } = Astro.props;
-const [whole, light, alone] = how.frame.checks;
 ---
 
 <ol class="guide">
-  <li class="guide-camera">
-    <img src="/motion/steps/camera.jpg" alt="" width="960" height="540" loading="lazy" decoding="async" />
+  <li>
     <div class="guide-copy">
       <span class="n" aria-hidden="true">1</span>
       <h2>{how.camera.title}</h2>
@@ -19,28 +17,19 @@ const [whole, light, alone] = how.frame.checks;
     </div>
   </li>
 
-  <li class="guide-frame">
+  <li>
     <div class="guide-copy">
       <span class="n" aria-hidden="true">2</span>
       <h2>{how.frame.title}</h2>
+      <ul class="guide-checks">
+        {how.frame.checks.map((check) => (
+          <li>
+            <strong>{check.title}</strong>
+            <p>{check.text}</p>
+          </li>
+        ))}
+      </ul>
     </div>
-    <ol class="guide-checks">
-      <li>
-        <img src="/motion/steps/whole.jpg" alt="" width="960" height="540" loading="lazy" decoding="async" />
-        <strong>{whole.title}</strong>
-        <p>{whole.text}</p>
-      </li>
-      <li>
-        <img src="/motion/steps/light.jpg" alt="" width="960" height="720" loading="lazy" decoding="async" />
-        <strong>{light.title}</strong>
-        <p>{light.text}</p>
-      </li>
-      <li>
-        <img src="/motion/steps/alone.jpg" alt="" width="960" height="720" loading="lazy" decoding="async" />
-        <strong>{alone.title}</strong>
-        <p>{alone.text}</p>
-      </li>
-    </ol>
   </li>
 
   <li class="guide-shots">

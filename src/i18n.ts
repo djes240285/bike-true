@@ -209,15 +209,15 @@ export const dict: Record<Locale, Dict> = {
       frame: {
         title: 'Проверь кадр',
         checks: [
-          { title: 'Весь силуэт', text: 'В кадре велик и человек целиком, с полями по краям. Одежда облегающая.' },
-          { title: 'Ровный свет', text: 'Без окна за спиной и без жёсткой тени поперёк колена.' },
-          { title: 'Один в кадре', text: 'Второй человек сбивает скелет. Помощника — за камеру.' },
+          { title: 'Весь силуэт', text: 'Велик и человек целиком, одежда облегающая.' },
+          { title: 'Ровный свет', text: 'Без окна за спиной и без тени поперёк колена.' },
+          { title: 'Один в кадре', text: 'Второй человек сбивает разбор. Помощник — за камеру.' },
         ],
       },
       shots: {
         title: 'Два кадра',
-        down: { title: 'Шатун внизу', text: 'Строго на 6 часов. Здесь видно колено, спину и руку.' },
-        up: { title: 'Шатун вверху', text: 'Та же точка, шатун на 12 часов. Этот кадр нужен для бедра.' },
+        down: { title: 'Шатун внизу', text: 'Педаль на 6 часов, нога почти прямая. Отсюда колено, спина и рука.' },
+        up: { title: 'Шатун вверху', text: 'Та же точка, педаль на 12 часов, стопа на педали. Этот кадр — для бедра.' },
       },
       next: 'Дальше — разобрать кадр',
     },
@@ -398,15 +398,15 @@ export const dict: Record<Locale, Dict> = {
       frame: {
         title: 'Check the frame',
         checks: [
-          { title: 'Whole silhouette', text: 'Bike and rider fully in frame, with margin. Close-fitting clothes.' },
-          { title: 'Even light', text: 'No window behind you and no hard shadow across the knee.' },
-          { title: 'One in frame', text: 'A second person confuses the skeleton. Helper goes behind the camera.' },
+          { title: 'Whole silhouette', text: 'Bike and rider fully in frame. Close-fitting clothes.' },
+          { title: 'Even light', text: 'No window behind you and no shadow across the knee.' },
+          { title: 'One in frame', text: 'A second person throws off the reading. Helper stays behind the camera.' },
         ],
       },
       shots: {
         title: 'Two frames',
-        down: { title: 'Crank down', text: 'Straight to 6 o’clock. This shows knee, back and arm.' },
-        up: { title: 'Crank up', text: 'Same spot, crank at 12 o’clock. This frame is for the hip.' },
+        down: { title: 'Crank down', text: 'Pedal at 6 o’clock, leg almost straight. This shows knee, back and arm.' },
+        up: { title: 'Crank up', text: 'Same spot, pedal at 12 o’clock, foot still on the pedal. This frame is for the hip.' },
       },
       next: 'Next — read the photo',
     },
