@@ -10,7 +10,8 @@ describe('cabinet copy', () => {
   test('инструкция шва говорит про стену, книгу и обувь', () => {
     expect(dict.ru.account.inseamHelp).toContain('книг');
     expect(dict.ru.account.inseamHelp).toContain('обуви');
-    expect(dict.ru.account.bikeNote).toContain('не влияют');
+    expect(dict.ru.account.bikeNote).toContain('вынос');
+    expect(dict.ru.account.bikeNote).toContain('не пересчитываются');
     expect(dict.en.account.inseamHelp.length).toBeGreaterThan(20);
   });
 });

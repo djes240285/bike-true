@@ -1,12 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { dict, type Locale } from '../i18n';
 import { bandFor, type AngleKey } from '../lib/advice';
 import { readReading, writeReading } from '../lib/device';
 import { clearFrames, loadFrame, saveFrame } from '../lib/frames';
+import type { SavedBike } from '../lib/bike-sync';
+import type { BodyLayer } from '../lib/layers';
 import { pathFor } from '../lib/paths';
 import { crowd, readFrame, toPixels, type AngleReading, type Frame, type Point } from '../lib/reading';
 import { idealBottom, idealTop, jointsOf, moved } from '../lib/target';
 import PoseStage, { type Scene } from './PoseStage';
+import RideFilm from './RideFilm';
+import Overhead from './Overhead';
+import Picture from './Picture';
 import SaveReading from './SaveReading';
 const WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm';
 const MODEL =
@@ -58,7 +63,14 @@ export default function Analyzer({ locale }: { locale: Locale }) {
   const [bottomScene, setBottomScene] = useState<Scene | null>(null);
   const [topScene, setTopScene] = useState<Scene | null>(null);
   const [reading, setReading] = useState<AngleReading>(savedReading?.reading ?? emptyReading);
+  const [film, setFilm] = useState<AngleReading | null>(null);
+  const [layerBody, setLayerBody] = useState<BodyLayer>({});
+  const [layerBike, setLayerBike] = useState<SavedBike | null>(null);
+  const [overheadText, setOverheadText] = useState<string | null>(null);
   const [hadTop, setHadTop] = useState(savedReading?.hadTop ?? false);
+  const onLayer = useCallback((body: BodyLayer) => setLayerBody(body), []);
+  const onBike = useCallback((bike: SavedBike | null) => setLayerBike(bike), []);
+  const onCue = useCallback((text: string | null) => setOverheadText(text), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -170,6 +182,8 @@ export default function Analyzer({ locale }: { locale: Locale }) {
 
   function reset() {
     setReading(emptyReading);
+    setFilm(null);
+    setOverheadText(null);
     setHadTop(false);
     setBottom('empty');
     setTop('empty');
@@ -181,7 +195,9 @@ export default function Analyzer({ locale }: { locale: Locale }) {
     void clearFrames().catch(() => undefined);
   }
 
-  const hasReading = Object.values(reading).some((value) => typeof value === 'number');
+  const filmReading = film && Object.values(film).some((value) => typeof value === 'number') ? film : null;
+  const saved = filmReading ?? reading;
+  const hasReading = Object.values(saved).some((value) => typeof value === 'number');
 
   if (modelError) {
     return (
@@ -195,7 +211,7 @@ export default function Analyzer({ locale }: { locale: Locale }) {
               <div className="actions">
                 <a className="button" href={pathFor(locale, '/visit')}>{t.analyze.toVisit}</a>
               </div>
-              <SaveReading locale={locale} reading={reading} hadTop={hadTop} />
+              <SaveReading locale={locale} reading={saved} hadTop={hadTop || saved.hip !== null} onBike={onBike} />
             </div>
           </>
         ) : null}
@@ -206,6 +222,25 @@ export default function Analyzer({ locale }: { locale: Locale }) {
   return (
     <div className="analyzer">
       {loading ? <p className="muted loading-line">{t.analyze.loading}</p> : null}
+      <RideFilm
+        locale={locale}
+        ready={!loading}
+        detect={landmarker.current ? (canvas) => landmarker.current!.detect(canvas) : null}
+        onReading={(next, top) => {
+          setFilm(next);
+          if (top) setHadTop(true);
+        }}
+        onLayer={onLayer}
+        bike={layerBike}
+      />
+      <Overhead
+        locale={locale}
+        ready={!loading}
+        detect={landmarker.current ? (canvas) => landmarker.current!.detect(canvas) : null}
+        onCue={onCue}
+      />
+      <Picture locale={locale} photo={reading} film={filmReading} body={layerBody} bike={layerBike} overhead={overheadText} />
+      <h2 className="photos-kicker">{t.analyze.photos}</h2>
       <div className="shots">
         <FramePanel
           letter="A"
@@ -244,7 +279,7 @@ export default function Analyzer({ locale }: { locale: Locale }) {
             <button className="button ghost" type="button" onClick={reset}>{t.analyze.reset}</button>
           ) : null}
         </div>
-        {hasReading ? <SaveReading locale={locale} reading={reading} hadTop={hadTop} /> : null}
+        {hasReading ? <SaveReading locale={locale} reading={saved} hadTop={hadTop || saved.hip !== null} onBike={onBike} /> : null}
       </div>
     </div>
   );

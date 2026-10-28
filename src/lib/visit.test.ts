@@ -50,6 +50,9 @@ describe('visit', () => {
     expect(flagsFromEnv({ PAYMENTS_ENABLED: 'true' }).paymentsEnabled).toBe(true);
     expect(flagsFromEnv({ PAYMENTS_ENABLED: 'false' }).paymentsEnabled).toBe(false);
     expect(flagsFromEnv({}).paymentsEnabled).toBe(false);
+    expect(flagsFromEnv({}).subscriptionEnabled).toBe(false);
+    expect(flagsFromEnv({ SUBSCRIPTION_ENABLED: 'true' }).subscriptionEnabled).toBe(true);
+    expect(flagsFromEnv({ SUBSCRIPTION_ENABLED: 'false' }).subscriptionEnabled).toBe(false);
   });
 
   test('без токена заявка не уходит в Telegram', async () => {

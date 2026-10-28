@@ -43,6 +43,29 @@ export async function loadFrame(name: FrameName): Promise<Blob | null> {
   return value instanceof Blob ? value : null;
 }
 
+const CLIP = 'ride';
+
+export async function saveClip(blob: Blob) {
+  const database = await openDb();
+  const tx = database.transaction(STORE, 'readwrite');
+  tx.objectStore(STORE).put(blob, CLIP);
+  await done(tx);
+  database.close();
+}
+
+export async function loadClip(): Promise<Blob | null> {
+  const database = await openDb();
+  const tx = database.transaction(STORE, 'readonly');
+  const request = tx.objectStore(STORE).get(CLIP);
+  const value = await new Promise<unknown>((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  await done(tx);
+  database.close();
+  return value instanceof Blob ? value : null;
+}
+
 export async function clearFrames() {
   const database = await openDb();
   const tx = database.transaction(STORE, 'readwrite');

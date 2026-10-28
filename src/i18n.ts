@@ -91,6 +91,95 @@ export type Dict = {
     saveImage: string;
     saveVideo: string;
     recording: string;
+    photos: string;
+    videoTitle: string;
+    videoHint: string;
+    videoUpload: string;
+    videoReplace: string;
+    videoDrop: string;
+    videoWorking: string;
+    videoLong: string;
+    videoFloat: string;
+    bikeUse: string;
+    bikeSkip: string;
+    bodyTitle: string;
+    bodyHint: string;
+    gradeOn: string;
+    gradeHold: string;
+    gradeShift: string;
+    addBike: string;
+    bikeDialog: string;
+    bikeDialogLead: string;
+    bikeName: string;
+    bikeCrank: string;
+    bikeStem: string;
+    bikeSave: string;
+    bikeClose: string;
+    bikeNeedSignIn: string;
+    signInBack: string;
+    bikeError: string;
+    bikeLimit: string;
+    subNote: string;
+    overheadTitle: string;
+    overheadHint: string;
+    overheadFront: string;
+    overheadSide: string;
+    overheadUpload: string;
+    overheadWorking: string;
+    overheadKneesIn: string;
+    overheadKneesOver: string;
+    overheadKneesOut: string;
+    overheadTorsoForward: string;
+    overheadTorsoWith: string;
+    overheadTorsoUpright: string;
+    overheadUnseen: string;
+    overheadCompare: string;
+    overheadHelpTitle: string;
+    overheadHelp: string;
+    overheadSteps: string[];
+    overheadPhotos: string;
+    overheadClip: string;
+    overheadFrontPhoto: string;
+    overheadSidePhoto: string;
+    overheadMany: string;
+    overheadRun: string;
+    overheadAdd: string;
+    overheadKnee: string;
+    overheadHip: string;
+    overheadTorso: string;
+    overheadShin: string;
+    overheadArm: string;
+    overheadNeck: string;
+    overheadLeft: string;
+    overheadRight: string;
+    overheadSplit: string;
+    stackTitle: string;
+    stackCamera: string;
+    stackBike: string;
+    stackSaddle: string;
+    stackAgree: string;
+    stackSplit: string;
+    stackPhoto: string;
+    stackFilm: string;
+    gradeEasy: string;
+    gradeReach: string;
+    gradeEffort: string;
+    gradeCant: string;
+    bodyPosterior: string;
+    bodyHip: string;
+    bodyAnkle: string;
+    bodyShoulder: string;
+    notes: {
+      kneeCrank: string;
+      armStemLong: string;
+      armStemShort: string;
+      backPosterior: string;
+      hipFlex: string;
+      kneeAnkle: string;
+      armShoulder: string;
+      backDropFlat: string;
+      backDropUp: string;
+    };
   };
   visit: {
     title: string;
@@ -306,7 +395,7 @@ export const dict: Record<Locale, Dict> = {
     },
     analyze: {
       title: 'Разбор',
-      lead: 'Загрузи фото сбоку — углы посчитаются прямо здесь, на твоём устройстве.',
+      lead: 'Загрузи фото или короткий ролик сбоку. Углы считаются здесь, файл с устройства не уходит.',
       bottom: 'Педаль внизу',
       top: 'Педаль вверху',
       bottomHint: 'Педаль со стороны камеры — на 6 часов, нога почти прямая.',
@@ -336,6 +425,100 @@ export const dict: Record<Locale, Dict> = {
       saveImage: 'Сохранить картинку',
       saveVideo: 'Сохранить видео',
       recording: 'Записываю…',
+      photos: 'Или два фото',
+      videoTitle: 'Ролик сбоку',
+      videoHint: '10–20 секунд на станке, несколько оборотов. Рычаги рисуются здесь. На сервер ролик не уходит.',
+      videoUpload: 'Загрузить ролик',
+      videoReplace: 'Другой ролик',
+      videoDrop: 'или перетащи сюда',
+      videoWorking: 'Считаю кадры на этом устройстве',
+      videoLong: 'Беру первые 20 секунд.',
+      videoFloat: 'За оборот углы плавают больше чем на 4°. Посадку лучше смотреть вживую.',
+      bikeUse: 'Велосипед из кабинета',
+      bikeSkip: 'Без велосипеда',
+      bodyTitle: 'Запас тела',
+      bodyHint: 'Нажатие фиксируется. «Легко» и «дотягиваюсь» оставляют обычный коридор. «С усилием» и «не могу» сдвигают его. Градус с ролика не переписывается.',
+      gradeOn: 'Выбрано',
+      gradeHold: 'Коридор обычный.',
+      gradeShift: 'Коридор сдвинут.',
+      addBike: 'Добавить велосипед',
+      bikeDialog: 'Новый велосипед',
+      bikeDialogLead: 'Он останется в кабинете и сразу ляжет на этот разбор.',
+      bikeName: 'Название',
+      bikeCrank: 'Шатун, мм',
+      bikeStem: 'Вынос, мм',
+      bikeSave: 'Сохранить',
+      bikeClose: 'Закрыть',
+      bikeNeedSignIn: 'Чтобы сохранить велосипед, войди. Ролик дождётся на этом устройстве, и мы вернём тебя сюда.',
+      signInBack: 'Войти и вернуться',
+      bikeError: 'Не получилось сохранить. Проверь название и миллиметры.',
+      bikeLimit: 'В кабинете уже максимум велосипедов.',
+      subNote: 'Подписка: оверхед, запас тела и свой велосипед. Кассы нет, поэтому блок открыт.',
+      overheadTitle: 'Оверхед',
+      overheadHint: 'Присед с палкой, босиком. Можно несколько роликов. Читаю обе стороны, от голени до кисти и шеи. Это наблюдение, не диагноз.',
+      overheadFront: 'Спереди',
+      overheadSide: 'Сбоку',
+      overheadUpload: 'Загрузить приседы',
+      overheadWorking: 'Смотрю нижнюю точку',
+      overheadKneesIn: 'В нижней точке колени уже щиколоток. Часто так ведёт стопа или бедро.',
+      overheadKneesOver: 'В нижней точке колени примерно над щиколотками.',
+      overheadKneesOut: 'В нижней точке колени шире щиколоток.',
+      overheadTorsoForward: 'Корпус ушёл вперёд относительно голени.',
+      overheadTorsoWith: 'Наклон корпуса близок к голени.',
+      overheadTorsoUpright: 'Корпус вертикальнее голени.',
+      overheadUnseen: 'В нижней точке суставы не собрались. Нужен человек целиком, присед до конца.',
+      overheadCompare: 'Сравниваю колени со щиколотками, не с носками: носки на ролике не меряю.',
+      overheadHelpTitle: 'Что такое оверхед',
+      overheadHelp: 'Присед с палкой над головой показывает, где тело не дотягивает: стопа, бедро, грудной отдел или плечо. Это не диагноз. Сзади не снимаем: суставы закрыты.',
+      overheadSteps: [
+        'Босиком, палка или ручка швабры над головой, локти прямые.',
+        'Спереди: телефон на уровне пояса, видны стопы и палка.',
+        'Сбоку: весь человек в кадре, присед до самой низкой точки.',
+        'Ролик 5–10 секунд или два фото: одно спереди, одно сбоку, в нижней точке.',
+      ],
+      overheadPhotos: 'Два фото',
+      overheadClip: 'Ролик',
+      overheadFrontPhoto: 'Фото спереди',
+      overheadSidePhoto: 'Фото сбоку',
+      overheadMany: 'Отметь, откуда снят каждый присед. Углы не усредняю.',
+      overheadRun: 'Разобрать',
+      overheadAdd: 'Добавить ролики',
+      overheadKnee: 'Колено',
+      overheadHip: 'Бедро',
+      overheadTorso: 'Корпус',
+      overheadShin: 'Голень',
+      overheadArm: 'Рука',
+      overheadNeck: 'Шея',
+      overheadLeft: 'Слева',
+      overheadRight: 'Справа',
+      overheadSplit: 'Колено в нижней точке {a}° и {b}°. Среднее не беру.',
+      stackTitle: 'Как складывается разбор',
+      stackCamera: 'Градус берётся с камеры и не переписывается. Тело сдвигает коридор. Велосипед меняет фразу совета, только когда угол уже вышел из коридора.',
+      stackBike: 'Шатун объясняет слишком прямое колено, вынос — руку, падение руля — наклон корпуса. Высоту седла в градус не переводим: её проверяет колено.',
+      stackSaddle: 'Высота седла {mm} мм записана. В угол она не пересчитывается.',
+      stackAgree: '{label}: фото {a}° и ролик {b}° сходятся.',
+      stackSplit: '{label}: фото {a}°, ролик {b}°. Разница больше 8°. Цифры так не складываются — лучше переснять кадр, где человек виден хуже.',
+      stackPhoto: 'Фото',
+      stackFilm: 'Ролик',
+      gradeEasy: 'Легко',
+      gradeReach: 'Дотягиваюсь',
+      gradeEffort: 'С усилием',
+      gradeCant: 'Не могу',
+      bodyPosterior: 'Ладони к полу стоя',
+      bodyHip: 'Колено к груди лёжа',
+      bodyAnkle: 'Колено к стене, пятка на полу',
+      bodyShoulder: 'Руки вверх у стены',
+      notes: {
+        kneeCrank: 'Шатун {mm} мм. Прямое колено внизу может быть из-за длины шатуна, не только из-за высоты седла.',
+        armStemLong: 'Вынос {mm} мм. Прямая рука чаще от длинного выноса.',
+        armStemShort: 'Вынос {mm} мм. Короткий вынос сгибает руку, вес может сидеть впереди.',
+        backPosterior: 'До пола тянуться трудно. Низкий корпус просит заднюю цепь. Угол спины ниже не ведём.',
+        hipFlex: 'Бедро к груди идёт с трудом. В верхней точке педали угол не закрываем.',
+        kneeAnkle: 'Лодыжка не дотягивается. Колено внизу дальше не распрямляем.',
+        armShoulder: 'Руки вверх идут с трудом. Прямую руку не требуем.',
+        backDropFlat: 'Падение руля {mm} мм. Низкий корпус может быть из-за этого перепада.',
+        backDropUp: 'Падение руля {mm} мм. Руль почти не ниже седла, поэтому корпус остаётся вертикальным.',
+      },
     },
     visit: {
       title: 'Запись на посадку',
@@ -478,7 +661,7 @@ export const dict: Record<Locale, Dict> = {
           ],
         },
       },
-      bikeNote: 'Размеры сохранены. На углы с фото они пока не влияют.',
+      bikeNote: 'Размеры сохранены. В разборе ролика вынос и шатуны участвуют в совете. Старые фото заново не пересчитываются.',
       addBike: 'Добавить велосипед',
       noBike: 'Без велосипеда',
       empty: 'Пока пусто',
@@ -610,7 +793,7 @@ export const dict: Record<Locale, Dict> = {
     },
     analyze: {
       title: 'Analysis',
-      lead: 'Upload a side photo — the angles are computed right here, on your device.',
+      lead: 'Upload a side photo or a short clip. Angles are computed here, and the file stays on your device.',
       bottom: 'Pedal down',
       top: 'Pedal up',
       bottomHint: 'Camera-side pedal at 6 o’clock, leg almost straight.',
@@ -640,6 +823,100 @@ export const dict: Record<Locale, Dict> = {
       saveImage: 'Save image',
       saveVideo: 'Save video',
       recording: 'Recording…',
+      photos: 'Or two photos',
+      videoTitle: 'Side clip',
+      videoHint: '10–20 seconds on a trainer, a few pedal strokes. The lines are drawn here. The clip is not uploaded.',
+      videoUpload: 'Upload a clip',
+      videoReplace: 'Another clip',
+      videoDrop: 'or drop it here',
+      videoWorking: 'Reading frames on this device',
+      videoLong: 'Using the first 20 seconds.',
+      videoFloat: 'The angles drift by more than 4° during a stroke. Worth checking the fit in person.',
+      bikeUse: 'Bike from your account',
+      bikeSkip: 'No bike',
+      bodyTitle: 'What your body can do',
+      bodyHint: 'A tap sticks. “Easy” and “I can reach” keep the usual target. “With effort” and “I can’t” shift it. The degree from the clip is not rewritten.',
+      gradeOn: 'Selected',
+      gradeHold: 'Usual target.',
+      gradeShift: 'Target shifted.',
+      addBike: 'Add a bike',
+      bikeDialog: 'New bike',
+      bikeDialogLead: 'It stays in your account and applies to this reading right away.',
+      bikeName: 'Name',
+      bikeCrank: 'Crank, mm',
+      bikeStem: 'Stem, mm',
+      bikeSave: 'Save',
+      bikeClose: 'Close',
+      bikeNeedSignIn: 'Sign in to save a bike. The clip stays on this device and we bring you back here.',
+      signInBack: 'Sign in and come back',
+      bikeError: 'Couldn’t save. Check the name and the millimetres.',
+      bikeLimit: 'Your account already has the maximum number of bikes.',
+      subNote: 'Subscription: the overhead squat, what your body can do, and your own bike. There’s no checkout yet, so this block is open.',
+      overheadTitle: 'Overhead squat',
+      overheadHint: 'A squat with a stick, barefoot. Several clips are fine. Both sides are read, from the shin to the hand and the neck. This is an observation, not a diagnosis.',
+      overheadFront: 'Front',
+      overheadSide: 'Side',
+      overheadUpload: 'Upload squats',
+      overheadWorking: 'Finding the bottom',
+      overheadKneesIn: 'At the bottom the knees are inside the ankles. That often comes from the foot or the hip.',
+      overheadKneesOver: 'At the bottom the knees sit about over the ankles.',
+      overheadKneesOut: 'At the bottom the knees are wider than the ankles.',
+      overheadTorsoForward: 'The torso has gone forward of the shin.',
+      overheadTorsoWith: 'The torso lean is close to the shin.',
+      overheadTorsoUpright: 'The torso is more upright than the shin.',
+      overheadUnseen: 'The joints didn’t come together at the bottom. The whole person needs to be in frame, squat all the way down.',
+      overheadCompare: 'Knees are compared with the ankles, not the toes. Toes are not measured from the clip.',
+      overheadHelpTitle: 'What the overhead squat is',
+      overheadHelp: 'A squat with a stick overhead shows where the body does not reach: foot, hip, thoracic spine or shoulder. It is not a diagnosis. We do not film from behind: the joints are hidden.',
+      overheadSteps: [
+        'Barefoot, a stick or broom handle overhead, elbows straight.',
+        'From the front: the phone at hip height, feet and the stick in frame.',
+        'From the side: the whole person, squat to the lowest point.',
+        'A 5–10 second clip, or two photos: one from the front and one from the side, at the bottom.',
+      ],
+      overheadPhotos: 'Two photos',
+      overheadClip: 'Clip',
+      overheadFrontPhoto: 'Front photo',
+      overheadSidePhoto: 'Side photo',
+      overheadMany: 'Mark where each squat was filmed. Angles are not averaged.',
+      overheadRun: 'Read',
+      overheadAdd: 'Add clips',
+      overheadKnee: 'Knee',
+      overheadHip: 'Hip',
+      overheadTorso: 'Torso',
+      overheadShin: 'Shin',
+      overheadArm: 'Arm',
+      overheadNeck: 'Neck',
+      overheadLeft: 'Left',
+      overheadRight: 'Right',
+      overheadSplit: 'Knee at the bottom is {a}° and {b}°. No average.',
+      stackTitle: 'How the reading stacks',
+      stackCamera: 'The degree comes from the camera and is not rewritten. The body shifts the target. The bike changes the advice sentence only when an angle is already outside that target.',
+      stackBike: 'Crank length explains a too-straight knee, stem length the arm, bar drop the torso lean. Saddle height is not turned into a degree: the knee angle checks it.',
+      stackSaddle: 'Saddle height {mm} mm is saved. It is not converted into an angle.',
+      stackAgree: '{label}: photo {a}° and clip {b}° agree.',
+      stackSplit: '{label}: photo {a}°, clip {b}°. The gap is over 8°. The numbers do not stack — reshoot the frame where the person is harder to see.',
+      stackPhoto: 'Photo',
+      stackFilm: 'Clip',
+      gradeEasy: 'Easy',
+      gradeReach: 'I can reach',
+      gradeEffort: 'With effort',
+      gradeCant: 'I can’t',
+      bodyPosterior: 'Palms toward the floor, standing',
+      bodyHip: 'Knee to chest, lying down',
+      bodyAnkle: 'Knee toward the wall, heel down',
+      bodyShoulder: 'Arms up, back to a wall',
+      notes: {
+        kneeCrank: 'Crank {mm} mm. A straight knee at the bottom can come from crank length, not only saddle height.',
+        armStemLong: 'Stem {mm} mm. A straight arm often comes from a long stem.',
+        armStemShort: 'Stem {mm} mm. A short stem bends the arm and can put weight on the hands.',
+        backPosterior: 'Reaching the floor is hard. A low torso asks for posterior chain you don’t have. We don’t chase a lower back angle.',
+        hipFlex: 'Knee to chest is hard. At the top of the pedal stroke we don’t close the hip.',
+        kneeAnkle: 'The ankle doesn’t reach. We don’t straighten the knee any further at the bottom.',
+        armShoulder: 'Arms overhead are hard. We don’t ask for a straight arm.',
+        backDropFlat: 'Bar drop {mm} mm. A low torso can come from that drop.',
+        backDropUp: 'Bar drop {mm} mm. The bar is barely below the saddle, so the torso stays upright.',
+      },
     },
     visit: {
       title: 'Book a fitting',
@@ -782,7 +1059,7 @@ export const dict: Record<Locale, Dict> = {
           ],
         },
       },
-      bikeNote: 'Sizes are saved. They do not affect the angles from the photo yet.',
+      bikeNote: 'Sizes are saved. In a clip reading, stem and crank length join the advice. Older photos are not recalculated.',
       addBike: 'Add a bike',
       noBike: 'No bike',
       empty: 'Nothing here yet',

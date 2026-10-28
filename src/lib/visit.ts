@@ -106,6 +106,7 @@ export async function deliverVisit(body: unknown, env: Record<string, string | u
 export function flagsFromEnv(env: Record<string, string | undefined>) {
   return {
     paymentsEnabled: env.PAYMENTS_ENABLED === 'true',
+    subscriptionEnabled: env.SUBSCRIPTION_ENABLED === 'true',
     priceRub: env.PRICE_RUB?.trim() ?? '',
     city: env.CITY?.trim() ?? '',
     durationMin: env.DURATION_MIN?.trim() ?? '',

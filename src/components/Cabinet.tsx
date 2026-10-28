@@ -5,7 +5,7 @@ import { FIT_IDS, RIDER_IDS, type FitId, type RiderId } from '../lib/fits';
 import { readingSetup, type ReadingSetup } from '../lib/reading-setup';
 import { readRiderLook, writeRiderLook } from '../lib/look';
 import { pathFor } from '../lib/paths';
-import { cmSuggestion, mmFits, parseMmInput, type BikeMmKey } from '../lib/account';
+import { cabinetNext, cmSuggestion, mmFits, parseMmInput, type BikeMmKey } from '../lib/account';
 import { apiUrl, cabinetFetch } from '../lib/cabinet-client';
 import MeasureHint from './MeasureHint';
 import Pick from './Pick';
@@ -807,7 +807,9 @@ export default function Cabinet({ locale, screen }: { locale: Locale; screen: Sc
       return <p className="lead"><a href={pathFor(locale, '/account')}>{session.me.name}</a></p>;
     }
     if (session.state === 'loading') return <Wheel label={t.cabinetLoading} />;
-    return <Providers locale={locale} next={pathFor(locale, '/account')} />;
+    const asked = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('next') : null;
+    const next = asked ? cabinetNext(asked) : pathFor(locale, '/account');
+    return <Providers locale={locale} next={next} />;
   }
 
   if (screen === 'home') {

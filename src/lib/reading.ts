@@ -1,5 +1,7 @@
 import { angleAt, meanVisibility, seen, torsoInclinationDeg, type Point } from './geometry';
 
+export type { Point };
+
 export const RIGHT = {
   shoulder: 12,
   elbow: 14,

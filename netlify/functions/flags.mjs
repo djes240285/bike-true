@@ -3,6 +3,7 @@ import { flagsFromEnv } from '../../src/lib/visit.ts';
 export default async () => {
   const flags = flagsFromEnv({
     PAYMENTS_ENABLED: readEnv('PAYMENTS_ENABLED'),
+    SUBSCRIPTION_ENABLED: readEnv('SUBSCRIPTION_ENABLED'),
     PRICE_RUB: readEnv('PRICE_RUB'),
     CITY: readEnv('CITY'),
     DURATION_MIN: readEnv('DURATION_MIN'),

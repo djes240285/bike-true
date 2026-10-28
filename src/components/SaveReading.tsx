@@ -1,12 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { dict, type Locale } from '../i18n';
+import { subscribeBikes, type SavedBike } from '../lib/bike-sync';
 import { apiUrl, cabinetFetch } from '../lib/cabinet-client';
-import type { FitId } from '../lib/fits';
 import { pathFor } from '../lib/paths';
 import type { AngleReading } from '../lib/reading';
+import BikeDialog from './BikeDialog';
 import Pick from './Pick';
 
-type Bike = { id: number; name: string; fit: FitId };
+type Bike = SavedBike;
 
 function round(value: number | null): number | null {
   return value === null ? null : Math.round(value);
@@ -24,10 +25,12 @@ export default function SaveReading({
   locale,
   reading,
   hadTop,
+  onBike,
 }: {
   locale: Locale;
   reading: AngleReading;
   hadTop: boolean;
+  onBike?: (bike: SavedBike | null) => void;
 }) {
   const t = dict[locale].account;
   const enabled = apiUrl() !== '';
@@ -35,6 +38,27 @@ export default function SaveReading({
   const [bikes, setBikes] = useState<Bike[]>([]);
   const [choice, setChoice] = useState('');
   const [status, setStatus] = useState<'' | 'saved' | 'error' | 'limit'>('');
+  const [subscription, setSubscription] = useState(false);
+  const [dialog, setDialog] = useState(false);
+
+  useEffect(() => {
+    let cancel = false;
+    void fetch('/api/flags')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { subscriptionEnabled?: boolean } | null) => {
+        if (!cancel) setSubscription(data?.subscriptionEnabled === true);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancel = true;
+    };
+  }, []);
+
+  useEffect(() => subscribeBikes((bike) => {
+    setBikes((rows) => [bike, ...rows.filter((item) => item.id !== bike.id)]);
+    setChoice(String(bike.id));
+    setDialog(false);
+  }), []);
 
   useEffect(() => {
     if (!enabled) return;
@@ -69,6 +93,12 @@ export default function SaveReading({
       alive = false;
     };
   }, [enabled]);
+
+  useEffect(() => {
+    if (phase !== 'ready') return;
+    const selected = choice ? bikes.find((item) => String(item.id) === choice) ?? null : null;
+    onBike?.(selected);
+  }, [phase, choice, bikes, onBike]);
 
   if (!enabled) return <p className="note">{t.unavailable}</p>;
 
@@ -116,12 +146,20 @@ export default function SaveReading({
   ];
 
   return (
+    <>
     <form className="save-reading" onSubmit={submit}>
-      <Pick label={t.pickBike} value={choice} options={options} onChange={setChoice} />
+      <div className="save-bike">
+        <Pick label={t.pickBike} value={choice} options={options} onChange={setChoice} />
+        {subscription ? (
+          <button className="button ghost" type="button" onClick={() => setDialog(true)}>{dict[locale].analyze.addBike}</button>
+        ) : null}
+      </div>
       <button className="button" type="submit">{t.saveReading}</button>
       {status === 'saved' && <p className="note" role="status">{t.saved}</p>}
       {status === 'error' && <p className="warn" role="alert">{t.error}</p>}
       {status === 'limit' && <p className="warn" role="alert">{t.limit}</p>}
     </form>
+    <BikeDialog locale={locale} open={dialog} onClose={() => setDialog(false)} />
+    </>
   );
 }

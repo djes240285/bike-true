@@ -379,7 +379,7 @@ export function createApp() {
     const counted = await db.select({ total: count() }).from(bikes).where(eq(bikes.userId, user.id));
     if (overLimit(Number(counted[0]?.total ?? 0), BIKE_LIMIT)) return c.json({ ok: false, error: 'limit' }, 409);
     const now = new Date();
-    await db.insert(bikes).values({
+    const [created] = await db.insert(bikes).values({
       userId: user.id,
       name: parsed.bike.name,
       fit: parsed.bike.fit,
@@ -390,7 +390,18 @@ export function createApp() {
       createdAt: now,
       updatedAt: now,
     });
-    return c.json({ ok: true });
+    return c.json({
+      ok: true,
+      bike: {
+        id: created.insertId,
+        name: parsed.bike.name,
+        fit: parsed.bike.fit,
+        crank_mm: parsed.bike.crankMm,
+        saddle_mm: parsed.bike.saddleMm,
+        stem_mm: parsed.bike.stemMm,
+        drop_mm: parsed.bike.dropMm,
+      },
+    });
   });
 
   app.put('/bikes/:id', async (c) => {
