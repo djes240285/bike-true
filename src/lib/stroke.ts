@@ -81,13 +81,25 @@ export function strokeAngles(stroke: StrokeReading): AngleReading {
 }
 
 export const STROKE_STEP_SEC = 1 / 8;
-export const STROKE_CAP_SEC = 20;
+/** До этой длины кадр берётся 8 раз в секунду. */
+export const STROKE_FULL_SEC = 30;
+/** Дальше первой минуты не читаем. */
+export const STROKE_CAP_SEC = 60;
+/** Столько кадров хватает на минуту, если шаг уже реже. */
+export const STROKE_BUDGET = 240;
 
-/** Метки кадров до конца ролика, но не дальше 20 секунд. */
+export function sampleSpan(durationSec: number): 'full' | 'minute' | 'capped' {
+  if (!Number.isFinite(durationSec) || durationSec <= STROKE_FULL_SEC + 0.3) return 'full';
+  if (durationSec <= STROKE_CAP_SEC + 0.3) return 'minute';
+  return 'capped';
+}
+
+/** Весь ролик до минуты. После 30 с шаг реже, чтобы не разбирать каждый кадр. */
 export function sampleTimes(durationSec: number, step = STROKE_STEP_SEC, cap = STROKE_CAP_SEC): number[] {
   if (!Number.isFinite(durationSec) || durationSec < 0.4) return [];
   const limit = Math.min(durationSec, cap);
+  const paced = limit <= STROKE_FULL_SEC ? step : Math.max(step, limit / STROKE_BUDGET);
   const times: number[] = [];
-  for (let time = 0; time < limit - 0.05; time += step) times.push(Math.round(time * 1000) / 1000);
+  for (let time = 0; time < limit - 0.05; time += paced) times.push(Math.round(time * 1000) / 1000);
   return times;
 }

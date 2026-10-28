@@ -81,6 +81,74 @@ export function parseProfile(body: unknown) {
   return { ok: true as const, profile: { rider: record.rider as RiderId | null, heightCm, inseamCm } };
 }
 
+const PERSON_GRADES = ['easy', 'reach', 'effort', 'cant'] as const;
+const PERSON_FLAGS = ['knees-in', 'knees-over', 'knees-out', 'shin-uneven', 'neck-uneven', 'arms-open', 'arms-short', 'hip-shallow'] as const;
+const CHAIN_KEYS = ['shin', 'knee', 'hip', 'arm', 'neck'] as const;
+
+export type PersonChain = Record<(typeof CHAIN_KEYS)[number], number | null>;
+export type PersonOverhead = {
+  left: PersonChain;
+  right: PersonChain;
+  flags: Array<(typeof PERSON_FLAGS)[number]>;
+};
+
+function personGrade(value: unknown): (typeof PERSON_GRADES)[number] | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  return PERSON_GRADES.includes(value as (typeof PERSON_GRADES)[number]) ? value as (typeof PERSON_GRADES)[number] : undefined;
+}
+
+function personChain(value: unknown): PersonChain | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const record = value as Record<string, unknown>;
+  const chain = {} as PersonChain;
+  for (const key of CHAIN_KEYS) {
+    const item = record[key];
+    if (item === null || item === undefined) {
+      chain[key] = null;
+      continue;
+    }
+    if (typeof item !== 'number' || !Number.isInteger(item) || item < 0 || item > 180) return undefined;
+    chain[key] = item;
+  }
+  return chain;
+}
+
+/** Карточка человека. Поле, которого нет в запросе, не трогаем. */
+export function parsePerson(body: unknown) {
+  if (hasPhotoField(body)) return { ok: false as const, error: 'photo' as const };
+  if (!body || typeof body !== 'object') return { ok: false as const, error: 'body' as const };
+  const record = body as Record<string, unknown>;
+  const posterior = personGrade(record.posterior);
+  const hip = personGrade(record.hip);
+  const ankle = personGrade(record.ankle);
+  const shoulder = personGrade(record.shoulder);
+  if (posterior === undefined && 'posterior' in record) return { ok: false as const, error: 'body' as const };
+  if (hip === undefined && 'hip' in record) return { ok: false as const, error: 'body' as const };
+  if (ankle === undefined && 'ankle' in record) return { ok: false as const, error: 'body' as const };
+  if (shoulder === undefined && 'shoulder' in record) return { ok: false as const, error: 'body' as const };
+  let overhead: PersonOverhead | null | undefined;
+  if (!('overhead' in record)) overhead = undefined;
+  else if (record.overhead === null) overhead = null;
+  else {
+    const raw = record.overhead;
+    if (!raw || typeof raw !== 'object') return { ok: false as const, error: 'overhead' as const };
+    const card = raw as Record<string, unknown>;
+    const left = personChain(card.left);
+    const right = personChain(card.right);
+    const flags = Array.isArray(card.flags) ? card.flags : undefined;
+    if (!left || !right || !flags || flags.some((flag) => typeof flag !== 'string' || !PERSON_FLAGS.includes(flag as (typeof PERSON_FLAGS)[number]))) {
+      return { ok: false as const, error: 'overhead' as const };
+    }
+    overhead = { left, right, flags: flags as PersonOverhead['flags'] };
+  }
+  const person = { posterior, hip, ankle, shoulder, overhead };
+  if (posterior === undefined && hip === undefined && ankle === undefined && shoulder === undefined && overhead === undefined) {
+    return { ok: false as const, error: 'body' as const };
+  }
+  return { ok: true as const, person };
+}
+
 export function parseBike(body: unknown) {
   if (hasPhotoField(body)) return { ok: false as const, error: 'photo' as const };
   if (!body || typeof body !== 'object') return { ok: false as const, error: 'name' as const };

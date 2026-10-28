@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { BIKE_LIMIT, cabinetNext, cmSuggestion, mmFits, overLimit, parseBike, parseDisplayName, parseMmInput, parseProfile, parseReading, READING_LIMIT } from './account';
+import { BIKE_LIMIT, cabinetNext, cmSuggestion, mmFits, overLimit, parseBike, parseDisplayName, parseMmInput, parsePerson, parseProfile, parseReading, READING_LIMIT } from './account';
 
 describe('profile', () => {
   test('крайние рост и шов проходят, шов меньше роста', () => {
@@ -31,6 +31,25 @@ describe('profile', () => {
 
   test('картинка в мерках отклоняется', () => {
     expect(parseProfile({ rider: 'adult', height_cm: 180, inseam_cm: 86, photo: 'x' })).toMatchObject({ error: 'photo' });
+  });
+});
+
+describe('карточка человека', () => {
+  test('запас и оверхед проходят, пустой запрос нет', () => {
+    expect(parsePerson({
+      posterior: 'cant',
+      hip: null,
+      ankle: 'easy',
+      shoulder: 'effort',
+      overhead: {
+        left: { shin: 7, knee: 90, hip: 70, arm: 160, neck: 140 },
+        right: { shin: 5, knee: null, hip: 72, arm: 150, neck: 145 },
+        flags: ['knees-in'],
+      },
+    }).ok).toBe(true);
+    expect(parsePerson({}).ok).toBe(false);
+    expect(parsePerson({ posterior: 'hard' })).toMatchObject({ error: 'body' });
+    expect(parsePerson({ overhead: { left: {}, right: {}, flags: ['nope'] } })).toMatchObject({ error: 'overhead' });
   });
 });
 

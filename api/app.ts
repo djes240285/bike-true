@@ -3,7 +3,7 @@ import { and, count, desc, eq, lt } from 'drizzle-orm';
 import { Hono, type Context } from 'hono';
 import { cors } from 'hono/cors';
 import { getCookie } from 'hono/cookie';
-import { BIKE_LIMIT, READING_LIMIT, cabinetNext, overLimit, parseBike, parseDisplayName, parseProfile, parseReading } from '../src/lib/account';
+import { BIKE_LIMIT, READING_LIMIT, cabinetNext, overLimit, parseBike, parseDisplayName, parsePerson, parseProfile, parseReading } from '../src/lib/account';
 import { googleAuthUrl, yandexAuthUrl } from '../src/lib/oauth-url';
 import { clearSessionCookie, hashSessionToken, newSessionToken, sessionCookie } from '../src/lib/session';
 import { avatarUrl, yandexAvatar } from '../src/lib/avatar';
@@ -37,6 +37,16 @@ async function startSession(userId: number) {
 
 function webOrigin() {
   return process.env.WEB_ORIGIN?.trim() || 'http://127.0.0.1:4321';
+}
+
+function readOverhead(raw: string | null) {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
 function sameLocalOrigin(candidate: string): boolean {
@@ -300,7 +310,16 @@ export function createApp() {
       role: user.role,
       providers: [...new Set(linked.map((item) => item.provider))],
       profile: profile
-        ? { rider: profile.rider ?? null, height_cm: profile.heightCm ?? null, inseam_cm: profile.inseamCm ?? null }
+        ? {
+            rider: profile.rider ?? null,
+            height_cm: profile.heightCm ?? null,
+            inseam_cm: profile.inseamCm ?? null,
+            body_posterior: profile.bodyPosterior ?? null,
+            body_hip: profile.bodyHip ?? null,
+            body_ankle: profile.bodyAnkle ?? null,
+            body_shoulder: profile.bodyShoulder ?? null,
+            overhead: readOverhead(profile.overhead),
+          }
         : null,
     });
   });
@@ -343,6 +362,41 @@ export function createApp() {
           rider: parsed.profile.rider,
           heightCm: parsed.profile.heightCm,
           inseamCm: parsed.profile.inseamCm,
+          updatedAt: now,
+        },
+      });
+    return c.json({ ok: true });
+  });
+
+  app.put('/person', async (c) => {
+    const user = await currentUser(c);
+    if (!user) return c.json({ ok: false, error: 'session' }, 401);
+    const parsed = parsePerson(await c.req.json().catch(() => null));
+    if (!parsed.ok) return c.json({ ok: false, error: parsed.error }, 400);
+    const now = new Date();
+    const { posterior, hip, ankle, shoulder, overhead } = parsed.person;
+    const overheadText = overhead === undefined ? undefined : overhead === null ? null : JSON.stringify(overhead);
+    await database()
+      .insert(profiles)
+      .values({
+        userId: user.id,
+        rider: null,
+        heightCm: null,
+        inseamCm: null,
+        bodyPosterior: posterior === undefined ? null : posterior,
+        bodyHip: hip === undefined ? null : hip,
+        bodyAnkle: ankle === undefined ? null : ankle,
+        bodyShoulder: shoulder === undefined ? null : shoulder,
+        overhead: overheadText ?? null,
+        updatedAt: now,
+      })
+      .onDuplicateKeyUpdate({
+        set: {
+          ...(posterior !== undefined ? { bodyPosterior: posterior } : {}),
+          ...(hip !== undefined ? { bodyHip: hip } : {}),
+          ...(ankle !== undefined ? { bodyAnkle: ankle } : {}),
+          ...(shoulder !== undefined ? { bodyShoulder: shoulder } : {}),
+          ...(overheadText !== undefined ? { overhead: overheadText } : {}),
           updatedAt: now,
         },
       });

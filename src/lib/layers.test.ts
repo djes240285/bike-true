@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { corridorFor, layerNotes, leadingNote, readingsSplit, splitAngles } from './layers';
+import { corridorFor, explainFactors, layerNotes, leadingNote, readingsSplit, splitAngles } from './layers';
 
 const open = { knee: 145, back: 42, arm: 158, hip: 62 };
 
@@ -74,5 +74,28 @@ describe('согласие слоёв', () => {
   test('два ролика сбоку не усредняются, если разошлись', () => {
     expect(readingsSplit([{ ...open, knee: 150 }, { ...open, knee: 164 }])).toEqual(['knee']);
     expect(readingsSplit([{ ...open, knee: 150 }, { ...open, knee: 156 }])).toEqual([]);
+  });
+});
+
+describe('что вошло в расчёт', () => {
+  test('размер молчит внутри коридора и говорит, когда угол уже вышел', () => {
+    const quiet = explainFactors(open, { crankMm: 175, stemMm: 120, dropMm: 100, saddleMm: 720 }, null);
+    expect(quiet.find((row) => row.code === 'crank')?.state).toBe('quiet');
+    expect(quiet.find((row) => row.code === 'saddle')?.state).toBe('quiet');
+    const loud = explainFactors({ ...open, knee: 160, arm: 170 }, { crankMm: 175, stemMm: 120, dropMm: 10, saddleMm: null }, null);
+    expect(loud.find((row) => row.code === 'crank')?.state).toBe('speaks');
+    expect(loud.find((row) => row.code === 'stem')?.state).toBe('speaks');
+    expect(loud.find((row) => row.code === 'drop')?.state).toBe('quiet');
+    expect(loud.find((row) => row.code === 'saddle')?.state).toBe('missing');
+  });
+
+  test('запас тела двигает коридор и не переписывает градус', () => {
+    const reading = { ...open, back: 40 };
+    const rows = explainFactors(reading, null, { posterior: 'cant' });
+    const back = rows.find((row) => row.code === 'posterior');
+    expect(back?.state).toBe('speaks');
+    expect(back?.corridor).toEqual({ min: 46, max: 50 });
+    expect(reading.back).toBe(40);
+    expect(explainFactors(open, null, { ankle: 'easy' }).find((row) => row.code === 'ankle')?.state).toBe('hold');
   });
 });

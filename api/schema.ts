@@ -1,4 +1,4 @@
-import { datetime, int, mysqlEnum, mysqlTable, uniqueIndex, varchar } from 'drizzle-orm/mysql-core';
+import { datetime, int, mysqlEnum, mysqlTable, text, uniqueIndex, varchar } from 'drizzle-orm/mysql-core';
 
 export const users = mysqlTable('users', {
   id: int('id').primaryKey().autoincrement(),
@@ -39,6 +39,11 @@ export const profiles = mysqlTable('profiles', {
   rider: mysqlEnum('rider', ['child', 'teen', 'adult']),
   heightCm: int('height_cm'),
   inseamCm: int('inseam_cm'),
+  bodyPosterior: varchar('body_posterior', { length: 8 }),
+  bodyHip: varchar('body_hip', { length: 8 }),
+  bodyAnkle: varchar('body_ankle', { length: 8 }),
+  bodyShoulder: varchar('body_shoulder', { length: 8 }),
+  overhead: text('overhead'),
   updatedAt: datetime('updated_at', { mode: 'date' }).notNull(),
 });
 

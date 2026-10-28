@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { dict, type Locale } from '../i18n';
-import { band, type AngleKey } from '../lib/advice';
+import { band, CORRIDORS, type AngleKey } from '../lib/advice';
 import type { SavedBike } from '../lib/bike-sync';
-import { corridorFor, layerNotes, leadingNote, type BodyLayer, type Grade, type NoteCode } from '../lib/layers';
+import { corridorFor, explainFactors, layerNotes, leadingNote, type BodyLayer, type Grade, type NoteCode } from '../lib/layers';
+import Factors from './Factors';
 import { crowd, LEFT, pickSide, readFrame, RIGHT, toPixels, type AngleReading, type Point } from '../lib/reading';
-import { readStroke, sampleTimes, STROKE_CAP_SEC, strokeAngles, type StrokeReading, type StrokeSample } from '../lib/stroke';
+import { readStroke, sampleSpan, sampleTimes, strokeAngles, type StrokeReading, type StrokeSample } from '../lib/stroke';
 import { frameAngles, poseAt, smoothPoses } from '../lib/track';
 
 type Detect = (canvas: HTMLCanvasElement) => { landmarks?: Point[][] };
@@ -163,6 +164,7 @@ export default function RideFilm({
   onReading,
   onLayer,
   bike,
+  generation = 0,
 }: {
   locale: Locale;
   ready: boolean;
@@ -170,6 +172,7 @@ export default function RideFilm({
   onReading: (reading: AngleReading, hadTop: boolean) => void;
   onLayer?: (body: BodyLayer) => void;
   bike: SavedBike | null;
+  generation?: number;
 }) {
   const copy = dict[locale].analyze;
   const angles = dict[locale].angles;
@@ -181,7 +184,7 @@ export default function RideFilm({
   const [over, setOver] = useState(false);
   const [status, setStatus] = useState<'empty' | 'busy' | 'done' | 'retake' | 'crowd'>('empty');
   const [progress, setProgress] = useState(0);
-  const [long, setLong] = useState(false);
+  const [span, setSpan] = useState<'full' | 'minute' | 'capped'>('full');
   const [url, setUrl] = useState<string | null>(null);
   const [samples, setSamples] = useState<FilmSample[]>([]);
   const [stroke, setStroke] = useState<StrokeReading | null>(null);
@@ -218,6 +221,21 @@ export default function RideFilm({
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
   }, []);
 
+  useEffect(() => {
+    if (!generation) return;
+    if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+    urlRef.current = null;
+    setUrl(null);
+    setSamples([]);
+    setStroke(null);
+    setStatus('empty');
+    setProgress(0);
+    setReveal(0);
+    setSpan('full');
+    setBody({});
+    setOver(false);
+  }, [generation]);
+
   async function take(file: File | undefined) {
     const video = workRef.current;
     if (!file || !detect || !video) return;
@@ -240,7 +258,7 @@ export default function RideFilm({
       const duration = Number.isFinite(video.duration) ? video.duration : 0;
       const times = sampleTimes(duration);
       if (times.length === 0) throw new Error('short');
-      setLong(duration > STROKE_CAP_SEC + 0.3);
+      setSpan(sampleSpan(duration));
       const width = 640;
       const height = Math.max(1, Math.round((width * video.videoHeight) / video.videoWidth));
       const canvas = document.createElement('canvas');
@@ -382,7 +400,12 @@ export default function RideFilm({
       ) : null}
       {status === 'retake' ? <p className="warn">{copy.retake}</p> : null}
       {status === 'crowd' ? <p className="warn">{copy.crowd}</p> : null}
-      {long && status === 'done' ? <p className="note">{copy.videoLong}</p> : null}
+      {span === 'minute' && status === 'done' ? <p className="note">{copy.videoMinute}</p> : null}
+      {span === 'capped' && status === 'done' ? <p className="note">{copy.videoLong}</p> : null}
+      {reading ? (
+        <p className="note">{bike ? copy.fitBikeOn.replace('{name}', bike.name) : copy.fitBikeOff}</p>
+      ) : null}
+      {reading ? <Factors locale={locale} scope="bike" rows={explainFactors(reading, bits, body)} /> : null}
 
       {reading && shown.length > 0 ? (
         <div className="angles">
@@ -425,15 +448,41 @@ export default function RideFilm({
             <p>{copy.bodyHint}</p>
             {QUESTIONS.map((question) => {
               const picked = body[question];
+              const angleKey: AngleKey = question === 'posterior' ? 'back' : question === 'ankle' ? 'knee' : question === 'shoulder' ? 'arm' : 'hip';
+              const base = CORRIDORS[angleKey];
+              const next = corridorFor(angleKey, picked ? { [question]: picked } : null);
+              const moved = next.min !== base.min || next.max !== base.max;
               return (
                 <div key={question} className="grade-row">
                   <span>
                     {questionText(copy, question)}
                     {picked ? (
                       <small>
-                        {copy.gradeOn}: {gradeText(copy, picked)}. {picked === 'effort' || picked === 'cant' ? copy.gradeShift : copy.gradeHold}
+                        {moved
+                          ? copy.factorShifts
+                            .replace('{label}', questionText(copy, question))
+                            .replace('{grade}', gradeText(copy, picked))
+                            .replace('{angle}', angles[angleKey].label)
+                            .replace('{min}', String(next.min))
+                            .replace('{max}', String(next.max))
+                            .replace('{baseMin}', String(base.min))
+                            .replace('{baseMax}', String(base.max))
+                          : copy.factorHold
+                            .replace('{label}', questionText(copy, question))
+                            .replace('{grade}', gradeText(copy, picked))
+                            .replace('{angle}', angles[angleKey].label)
+                            .replace('{min}', String(next.min))
+                            .replace('{max}', String(next.max))}
                       </small>
-                    ) : null}
+                    ) : (
+                      <small>
+                        {copy.factorBodyMissing
+                          .replace('{label}', questionText(copy, question))
+                          .replace('{angle}', angles[angleKey].label)
+                          .replace('{min}', String(base.min))
+                          .replace('{max}', String(base.max))}
+                      </small>
+                    )}
                   </span>
                   <span className="grades">
                     {GRADES.map((grade) => (

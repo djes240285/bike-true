@@ -979,6 +979,11 @@ footer a { text-underline-offset: 3px; }
 }
 
 .analyzer { margin-top: 32px; }
+.factors { display: grid; gap: 8px; margin-top: 12px; }
+.factors h3, .factors h4 { margin: 0; }
+.factors h4 { font-size: 16px; }
+.factors p, .factors li { margin: 0; }
+.factors ul { margin: 0; padding-left: 1.15em; display: grid; gap: 6px; }
 .analyzer-foot {
   display: grid;
   gap: 14px;
@@ -1165,6 +1170,7 @@ html[data-theme="dark"] .film-dialog .button.ghost {
 .sub-layer h2 { margin: 0; font-size: 22px; }
 .sub-layer > p { margin: 0; color: var(--muted); }
 .overhead-result { display: grid; gap: 8px; }
+.overhead-result h3 { margin: 8px 0 0; font-size: 18px; }
 .overhead-result img { width: min(100%, 420px); border-radius: 14px; background: #1c1917; }
 .save-bike { display: grid; gap: 8px; align-content: end; }
 .film-dialog label { display: grid; gap: 6px; font-size: 14px; }

@@ -99,6 +99,10 @@ export type Dict = {
     videoDrop: string;
     videoWorking: string;
     videoLong: string;
+    videoMinute: string;
+    fitLead: string;
+    fitBikeOn: string;
+    fitBikeOff: string;
     videoFloat: string;
     bikeUse: string;
     bikeSkip: string;
@@ -153,6 +157,19 @@ export type Dict = {
     overheadLeft: string;
     overheadRight: string;
     overheadSplit: string;
+    overheadBriefTitle: string;
+    overheadNotRide: string;
+    overheadNeckNote: string;
+    overheadSeat: string;
+    overheadStay: string;
+    overheadFlagKneesIn: string;
+    overheadFlagKneesOver: string;
+    overheadFlagKneesOut: string;
+    overheadFlagShin: string;
+    overheadFlagNeck: string;
+    overheadFlagArmsOpen: string;
+    overheadFlagArmsShort: string;
+    overheadFlagHip: string;
     stackTitle: string;
     stackCamera: string;
     stackBike: string;
@@ -161,6 +178,27 @@ export type Dict = {
     stackSplit: string;
     stackPhoto: string;
     stackFilm: string;
+    stackNamed: string;
+    stackOpen: string;
+    saveScope: string;
+    factorTitle: string;
+    factorLead: string;
+    factorBike: string;
+    factorBody: string;
+    factorCrank: string;
+    factorStem: string;
+    factorDrop: string;
+    factorSaddle: string;
+    factorMissing: string;
+    factorQuiet: string;
+    factorQuietEmpty: string;
+    factorSpeaks: string;
+    factorSaddleLine: string;
+    factorSaddleMissing: string;
+    factorHold: string;
+    factorShifts: string;
+    factorBodySpeaks: string;
+    factorBodyMissing: string;
     gradeEasy: string;
     gradeReach: string;
     gradeEffort: string;
@@ -298,7 +336,7 @@ export const dict: Record<Locale, Dict> = {
     metaTitle: 'BikeTrue — байкфит по фото',
     metaDescription: 'Посадка на велосипеде по двум фото сбоку. Колено, спина, руки, бедро — и запись на живую настройку.',
     brand: 'BikeTrue',
-    nav: { how: 'Как снять', analyze: 'Разбор', visit: 'Записаться', about: 'Кто мы', faq: 'Вопросы', account: 'Кабинет' },
+    nav: { how: 'Как снять', analyze: 'Разбор', visit: 'Консультация', about: 'Кто мы', faq: 'Вопросы', account: 'Кабинет' },
     switchLabel: 'EN',
     home: {
       kicker: 'Байкфит по фото',
@@ -332,7 +370,7 @@ export const dict: Record<Locale, Dict> = {
       faqAll: 'Все вопросы',
       ctaTitle: 'Докрутим вместе?',
       ctaText: 'Приходи на посадку: посмотрим, подстроим седло, руль и шипы — и проедем, пока не станет хорошо.',
-      ctaPrimary: 'Записаться',
+      ctaPrimary: 'Написать в Telegram',
       ctaSecondary: 'Сначала фото',
       supportTitle: 'Поддержите BikeTrue',
       supportText: 'Разбор кадра бесплатный. Поддержка помогает держать его открытым.',
@@ -416,7 +454,7 @@ export const dict: Record<Locale, Dict> = {
       hipMissing: 'Нужен второй кадр, шатун вверху.',
       reset: 'Начать заново',
       kept: 'Углы прошлого разбора на этом устройстве. Фото вернётся само, если оно ещё здесь.',
-      toVisit: 'Записаться на посадку',
+      toVisit: 'Написать в Telegram',
       browser: 'Этому экрану нужен свежий браузер.',
       ghostNow: 'Сейчас',
       ghostTarget: 'Ориентир',
@@ -425,14 +463,18 @@ export const dict: Record<Locale, Dict> = {
       saveImage: 'Сохранить картинку',
       saveVideo: 'Сохранить видео',
       recording: 'Записываю…',
-      photos: 'Или два фото',
+      photos: 'Два фото той же посадки',
       videoTitle: 'Ролик сбоку',
-      videoHint: '10–20 секунд на станке, несколько оборотов. Рычаги рисуются здесь. На сервер ролик не уходит.',
+      videoHint: 'До минуты на станке, несколько оборотов. Рычаги рисуются здесь. На сервер ролик не уходит.',
       videoUpload: 'Загрузить ролик',
       videoReplace: 'Другой ролик',
       videoDrop: 'или перетащи сюда',
       videoWorking: 'Считаю кадры на этом устройстве',
-      videoLong: 'Беру первые 20 секунд.',
+      videoLong: 'Длиннее минуты: беру первую минуту.',
+      videoMinute: 'Длиннее полуминуты: читаю до минуты, кадры чуть реже.',
+      fitLead: 'Сначала посадка: ролик сбоку и два фото об одном и том же. Вывод общий, ниже. Оверхед после него — другая сводка, угол посадки она не переписывает.',
+      fitBikeOn: 'В совете велосипед «{name}». Шатун, вынос и падение входят во фразу, только если угол уже вне коридора. Градус не меняется.',
+      fitBikeOff: 'Велосипед ещё не выбран. Совет идёт по коридору, размеры не участвуют. Выберешь его внизу, у сохранения.',
       videoFloat: 'За оборот углы плавают больше чем на 4°. Посадку лучше смотреть вживую.',
       bikeUse: 'Велосипед из кабинета',
       bikeSkip: 'Без велосипеда',
@@ -474,7 +516,7 @@ export const dict: Record<Locale, Dict> = {
         'Босиком, палка или ручка швабры над головой, локти прямые.',
         'Спереди: телефон на уровне пояса, видны стопы и палка.',
         'Сбоку: весь человек в кадре, присед до самой низкой точки.',
-        'Ролик 5–10 секунд или два фото: одно спереди, одно сбоку, в нижней точке.',
+        'Ролик до минуты или два фото: одно спереди, одно сбоку, в нижней точке.',
       ],
       overheadPhotos: 'Два фото',
       overheadClip: 'Ролик',
@@ -492,6 +534,19 @@ export const dict: Record<Locale, Dict> = {
       overheadLeft: 'Слева',
       overheadRight: 'Справа',
       overheadSplit: 'Колено в нижней точке {a}° и {b}°. Среднее не беру.',
+      overheadBriefTitle: 'Что это значит для посадки',
+      overheadNotRide: 'Это присед, не угол на велосипеде. Градус посадки он не заменяет.',
+      overheadNeckNote: 'Шея — два отрезка, не один. Слева ухо–плечо–таз и справа то же самое. Так видно, какая сторона короче. Один общий угол это спрятал бы.',
+      overheadSeat: 'На посадке колено {n}°. Присед это число не меняет.',
+      overheadStay: 'В кабинет это ляжет в карточку человека, не в велосипед. Кнопка сохранения внизу.',
+      overheadFlagKneesIn: 'Колени уже щиколоток. На велосипеде такое колено часто смотрит в раму. Сначала стойка и голеностоп, не высота седла.',
+      overheadFlagKneesOver: 'Колени примерно над щиколотками. На угол посадки это само по себе не переносится.',
+      overheadFlagKneesOut: 'Колени шире щиколоток. На велосипеде колено может открываться наружу. Стойку смотрят раньше седла.',
+      overheadFlagShin: 'Голени разошлись больше чем на 8°. На велосипеде одна нога может вести колено иначе.',
+      overheadFlagNeck: 'Шея слева и справа разошлась больше чем на 8°. На велосипеде одно плечо часто оказывается ниже.',
+      overheadFlagArmsOpen: 'Руки над головой почти прямые. Плечо в этом тесте дотягивается, длина выноса тут ни при чём.',
+      overheadFlagArmsShort: 'Рука над головой сгибается. Дотянуться до руля может мешать плечо, не только длина выноса.',
+      overheadFlagHip: 'Бёдра в нижней точке почти прямые — присед не дошёл. Вывод по глубине пока слабый.',
       stackTitle: 'Как складывается разбор',
       stackCamera: 'Градус берётся с камеры и не переписывается. Тело сдвигает коридор. Велосипед меняет фразу совета, только когда угол уже вышел из коридора.',
       stackBike: 'Шатун объясняет слишком прямое колено, вынос — руку, падение руля — наклон корпуса. Высоту седла в градус не переводим: её проверяет колено.',
@@ -500,6 +555,27 @@ export const dict: Record<Locale, Dict> = {
       stackSplit: '{label}: фото {a}°, ролик {b}°. Разница больше 8°. Цифры так не складываются — лучше переснять кадр, где человек виден хуже.',
       stackPhoto: 'Фото',
       stackFilm: 'Ролик',
+      stackNamed: 'Фразы считаются с «{name}». Размеры входят, только если угол уже вне коридора.',
+      stackOpen: 'Велосипед не выбран. Размеры в этих фразах не участвуют.',
+      saveScope: 'Четыре угла — в выбранный велосипед. Оверхед и запас тела — в карточку человека: они одни на все велосипеды. Пустой блок старую карточку не стирает.',
+      factorTitle: 'Что вошло в расчёт',
+      factorLead: 'Градус с камеры не меняется. Размер велосипеда меняет фразу, только если угол уже вне коридора. «С усилием» и «не могу» двигают сам коридор. «Легко» и «дотягиваюсь» его не трогают.',
+      factorBike: 'Велосипед',
+      factorBody: 'Запас тела',
+      factorCrank: 'Шатун',
+      factorStem: 'Вынос',
+      factorDrop: 'Падение руля',
+      factorSaddle: 'Седло',
+      factorMissing: '{label} не записан. В расчёт не входит.',
+      factorQuiet: '{label} {mm} мм. {angle} {value}° в коридоре {min}–{max}°. Размер молчит.',
+      factorQuietEmpty: '{label} {mm} мм записан. Угла ещё нет, размер молчит.',
+      factorSpeaks: '{label} {mm} мм. {angle} {value}° вне коридора {min}–{max}°. Размер входит во фразу. Градус остаётся {value}°.',
+      factorSaddleLine: 'Седло {mm} мм. В градус не переводится. Высоту проверяет колено.',
+      factorSaddleMissing: 'Седло не записано. В градус оно всё равно не переводится.',
+      factorHold: '{label}: {grade}. Коридор «{angle}» остаётся {min}–{max}°.',
+      factorShifts: '{label}: {grade}. Коридор «{angle}» становится {min}–{max}° вместо {baseMin}–{baseMax}°.',
+      factorBodySpeaks: '{label}: {grade}. Коридор «{angle}» {min}–{max}°, угол {value}° в него упирается. Фраза про запас тела. Градус остаётся {value}°.',
+      factorBodyMissing: '{label} не отмечен. Коридор «{angle}» обычный: {min}–{max}°.',
       gradeEasy: 'Легко',
       gradeReach: 'Дотягиваюсь',
       gradeEffort: 'С усилием',
@@ -521,8 +597,8 @@ export const dict: Record<Locale, Dict> = {
       },
     },
     visit: {
-      title: 'Запись на посадку',
-      lead: 'Оставь контакты — напишем в Telegram и договоримся.',
+      title: 'Консультация',
+      lead: 'Напиши, что хочется разобрать. Сообщение уходит в Telegram. День можно не выбирать.',
       name: 'Имя',
       phone: 'Телефон',
       when: 'Когда удобно',
@@ -533,7 +609,7 @@ export const dict: Record<Locale, Dict> = {
       whenPickDay: 'Другой день',
       whenHint: 'Выбери день и час — или оставь пустым.',
       comment: 'Что беспокоит или чего хочется',
-      send: 'Записаться',
+      send: 'Написать в Telegram',
       sending: 'Отправляю…',
       sent: 'Готово. Скоро напишем в Telegram.',
       required: 'Нужны имя и телефон.',
@@ -696,7 +772,7 @@ export const dict: Record<Locale, Dict> = {
     metaTitle: 'BikeTrue — bike fit from a photo',
     metaDescription: 'Bike position from two side photos. Knee, back, arms, hip — then a hands-on fitting.',
     brand: 'BikeTrue',
-    nav: { how: 'How to shoot', analyze: 'Analysis', visit: 'Book', about: 'About', faq: 'FAQ', account: 'Account' },
+    nav: { how: 'How to shoot', analyze: 'Analysis', visit: 'Consult', about: 'About', faq: 'FAQ', account: 'Account' },
     switchLabel: 'RU',
     home: {
       kicker: 'Bike fit from a photo',
@@ -730,7 +806,7 @@ export const dict: Record<Locale, Dict> = {
       faqAll: 'All questions',
       ctaTitle: 'Fine-tune it together?',
       ctaText: 'Come for a fitting: we look, adjust saddle, bars and cleats — and ride until it feels right.',
-      ctaPrimary: 'Book',
+      ctaPrimary: 'Write on Telegram',
       ctaSecondary: 'Photo first',
       supportTitle: 'Support BikeTrue',
       supportText: 'The frame check is free. Support keeps it open.',
@@ -814,7 +890,7 @@ export const dict: Record<Locale, Dict> = {
       hipMissing: 'A second frame is needed, crank at the top.',
       reset: 'Start over',
       kept: 'Angles from your last analysis are on this device. The photo comes back if the browser still has it.',
-      toVisit: 'Book a fitting',
+      toVisit: 'Write on Telegram',
       browser: 'This screen needs a recent browser.',
       ghostNow: 'Now',
       ghostTarget: 'Target',
@@ -823,14 +899,18 @@ export const dict: Record<Locale, Dict> = {
       saveImage: 'Save image',
       saveVideo: 'Save video',
       recording: 'Recording…',
-      photos: 'Or two photos',
+      photos: 'Two photos of the same position',
       videoTitle: 'Side clip',
-      videoHint: '10–20 seconds on a trainer, a few pedal strokes. The lines are drawn here. The clip is not uploaded.',
+      videoHint: 'Up to a minute on a trainer, a few pedal strokes. The lines are drawn here. The clip is not uploaded.',
       videoUpload: 'Upload a clip',
       videoReplace: 'Another clip',
       videoDrop: 'or drop it here',
       videoWorking: 'Reading frames on this device',
-      videoLong: 'Using the first 20 seconds.',
+      videoLong: 'Longer than a minute: the first minute is read.',
+      videoMinute: 'Longer than half a minute: the clip is read up to a minute, with frames a little further apart.',
+      fitLead: 'The position comes first: a side clip and two photos of the same thing. The conclusion sits below. The overhead squat after that is a separate summary. It does not rewrite the position angles.',
+      fitBikeOn: 'The advice uses “{name}”. Crank, stem and drop enter the sentence only when an angle is already outside the target. The degree does not change.',
+      fitBikeOff: 'No bike is chosen yet. The advice follows the target, and the sizes stay out. Choose the bike below, where the reading is saved.',
       videoFloat: 'The angles drift by more than 4° during a stroke. Worth checking the fit in person.',
       bikeUse: 'Bike from your account',
       bikeSkip: 'No bike',
@@ -872,7 +952,7 @@ export const dict: Record<Locale, Dict> = {
         'Barefoot, a stick or broom handle overhead, elbows straight.',
         'From the front: the phone at hip height, feet and the stick in frame.',
         'From the side: the whole person, squat to the lowest point.',
-        'A 5–10 second clip, or two photos: one from the front and one from the side, at the bottom.',
+        'A clip up to a minute, or two photos: one from the front and one from the side, at the bottom.',
       ],
       overheadPhotos: 'Two photos',
       overheadClip: 'Clip',
@@ -890,6 +970,19 @@ export const dict: Record<Locale, Dict> = {
       overheadLeft: 'Left',
       overheadRight: 'Right',
       overheadSplit: 'Knee at the bottom is {a}° and {b}°. No average.',
+      overheadBriefTitle: 'What this means for the bike',
+      overheadNotRide: 'This is the squat, not the angle on the bike. It does not replace the position degree.',
+      overheadNeckNote: 'The neck is two segments, not one. Left is ear–shoulder–hip, and right is the same. That shows which side is shorter. One shared angle would hide the side.',
+      overheadSeat: 'On the bike the knee is {n}°. The squat does not change that number.',
+      overheadStay: 'This goes on the person card in the account, not on a bike. The save button is below.',
+      overheadFlagKneesIn: 'The knees are inside the ankles. On the bike that knee often points toward the frame. Stance and ankle come before saddle height.',
+      overheadFlagKneesOver: 'The knees sit about over the ankles. That does not, by itself, carry over to the position angle.',
+      overheadFlagKneesOut: 'The knees are wider than the ankles. On the bike the knee may open outward. Stance comes before the saddle.',
+      overheadFlagShin: 'The shins differ by more than 8°. On the bike one leg may steer the knee differently.',
+      overheadFlagNeck: 'The neck differs left to right by more than 8°. On the bike one shoulder is often lower.',
+      overheadFlagArmsOpen: 'The arms overhead are nearly straight. The shoulder reaches in this test. Stem length is not the point here.',
+      overheadFlagArmsShort: 'An arm bends overhead. Reaching the bar may be the shoulder, not only stem length.',
+      overheadFlagHip: 'The hips stay nearly straight at the bottom — the squat did not get there. The depth reading is still weak.',
       stackTitle: 'How the reading stacks',
       stackCamera: 'The degree comes from the camera and is not rewritten. The body shifts the target. The bike changes the advice sentence only when an angle is already outside that target.',
       stackBike: 'Crank length explains a too-straight knee, stem length the arm, bar drop the torso lean. Saddle height is not turned into a degree: the knee angle checks it.',
@@ -898,6 +991,27 @@ export const dict: Record<Locale, Dict> = {
       stackSplit: '{label}: photo {a}°, clip {b}°. The gap is over 8°. The numbers do not stack — reshoot the frame where the person is harder to see.',
       stackPhoto: 'Photo',
       stackFilm: 'Clip',
+      stackNamed: 'The sentences use “{name}”. Sizes enter only when an angle is already outside the target.',
+      stackOpen: 'No bike is chosen. Sizes do not enter these sentences.',
+      saveScope: 'The four angles go on the chosen bike. The overhead squat and the body grades go on the person card: one card for every bike. An empty block does not erase the card already saved.',
+      factorTitle: 'What entered the calculation',
+      factorLead: 'The degree from the camera does not change. A bike size changes the sentence only when an angle is already outside the target. “With effort” and “I can’t” move the target. “Easy” and “I can reach” leave it alone.',
+      factorBike: 'Bike',
+      factorBody: 'What the body can do',
+      factorCrank: 'Crank',
+      factorStem: 'Stem',
+      factorDrop: 'Bar drop',
+      factorSaddle: 'Saddle',
+      factorMissing: '{label} is not saved. It stays out of the calculation.',
+      factorQuiet: '{label} {mm} mm. {angle} {value}° is inside {min}–{max}°. The size stays quiet.',
+      factorQuietEmpty: '{label} {mm} mm is saved. There is no angle yet, so the size stays quiet.',
+      factorSpeaks: '{label} {mm} mm. {angle} {value}° is outside {min}–{max}°. The size enters the sentence. The degree stays {value}°.',
+      factorSaddleLine: 'Saddle {mm} mm. It is not turned into a degree. Knee angle checks the height.',
+      factorSaddleMissing: 'Saddle height is not saved. It would not become a degree anyway.',
+      factorHold: '{label}: {grade}. The “{angle}” target stays {min}–{max}°.',
+      factorShifts: '{label}: {grade}. The “{angle}” target becomes {min}–{max}° instead of {baseMin}–{baseMax}°.',
+      factorBodySpeaks: '{label}: {grade}. The “{angle}” target is {min}–{max}°, and {value}° is against it. The sentence is about the body. The degree stays {value}°.',
+      factorBodyMissing: '{label} is not marked. The “{angle}” target stays the usual {min}–{max}°.',
       gradeEasy: 'Easy',
       gradeReach: 'I can reach',
       gradeEffort: 'With effort',
@@ -919,8 +1033,8 @@ export const dict: Record<Locale, Dict> = {
       },
     },
     visit: {
-      title: 'Book a fitting',
-      lead: 'Leave your contacts — we’ll write on Telegram and find a time.',
+      title: 'A consultation',
+      lead: 'Write what you want to look at. The message goes to Telegram. The day can stay empty.',
       name: 'Name',
       phone: 'Phone',
       when: 'A good time',
@@ -931,7 +1045,7 @@ export const dict: Record<Locale, Dict> = {
       whenPickDay: 'Another day',
       whenHint: 'Pick a day and hour — or leave it blank.',
       comment: 'What bothers you, or what you want',
-      send: 'Book',
+      send: 'Write on Telegram',
       sending: 'Sending…',
       sent: 'Done. We’ll write on Telegram soon.',
       required: 'Name and phone are required.',

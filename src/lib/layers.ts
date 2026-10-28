@@ -77,6 +77,101 @@ const LEADING: Record<AngleKey, NoteCode[]> = {
   hip: ['hip-flex'],
 };
 
+const BODY_ANGLE = {
+  posterior: 'back',
+  hip: 'hip',
+  ankle: 'knee',
+  shoulder: 'arm',
+} as const;
+
+export type FactorCode = 'crank' | 'stem' | 'drop' | 'saddle' | 'posterior' | 'hip' | 'ankle' | 'shoulder';
+export type FactorState = 'missing' | 'quiet' | 'speaks' | 'hold' | 'shifts';
+
+export type Factor = {
+  kind: 'bike' | 'body';
+  code: FactorCode;
+  state: FactorState;
+  mm: number | null;
+  grade: Grade | null;
+  value: number | null;
+  base: { min: number; max: number };
+  corridor: { min: number; max: number };
+  angle: AngleKey;
+};
+
+/** Что реально вошло в фразу. Градус с камеры здесь не меняется. */
+export function explainFactors(reading: AngleReading, bike: BikeBits | null, body: BodyLayer | null): Factor[] {
+  const zone = (key: AngleKey, value: number | null) => {
+    if (value === null) return null;
+    const corridor = CORRIDORS[key];
+    return band(value, corridor.min, corridor.max);
+  };
+  const bikeFactor = (
+    code: 'crank' | 'stem' | 'drop' | 'saddle',
+    angle: AngleKey,
+    mm: number | null,
+    state: FactorState,
+  ): Factor => ({
+    kind: 'bike',
+    code,
+    state,
+    mm,
+    grade: null,
+    value: reading[angle],
+    base: { ...CORRIDORS[angle] },
+    corridor: { ...CORRIDORS[angle] },
+    angle,
+  });
+  const crank = bike?.crankMm ?? null;
+  const stem = bike?.stemMm ?? null;
+  const drop = bike?.dropMm ?? null;
+  const saddle = bike?.saddleMm ?? null;
+  const kneeZone = zone('knee', reading.knee);
+  const armZone = zone('arm', reading.arm);
+  const backZone = zone('back', reading.back);
+  const rows: Factor[] = [
+    bikeFactor('crank', 'knee', crank, crank === null ? 'missing' : kneeZone === 'high' && crank >= 172.5 ? 'speaks' : 'quiet'),
+    bikeFactor(
+      'stem',
+      'arm',
+      stem,
+      stem === null ? 'missing' : (armZone === 'high' && stem >= 110) || (armZone === 'low' && stem <= 80) ? 'speaks' : 'quiet',
+    ),
+    bikeFactor(
+      'drop',
+      'back',
+      drop,
+      drop === null ? 'missing' : (backZone === 'low' && drop >= 90) || (backZone === 'high' && drop <= 20) ? 'speaks' : 'quiet',
+    ),
+    bikeFactor('saddle', 'knee', saddle, saddle === null ? 'missing' : 'quiet'),
+  ];
+  (['posterior', 'hip', 'ankle', 'shoulder'] as const).forEach((code) => {
+    const angle = BODY_ANGLE[code];
+    const grade = body?.[code] ?? null;
+    const corridor = corridorFor(angle, body);
+    const value = reading[angle];
+    let state: FactorState = 'missing';
+    if (grade === 'easy' || grade === 'reach') state = 'hold';
+    else if (grade === 'effort' || grade === 'cant') {
+      const shifted = value === null ? null : band(value, corridor.min, corridor.max);
+      const hits = code === 'posterior' || code === 'hip' ? shifted === 'low' : shifted === 'high';
+      state = hits ? 'speaks' : 'shifts';
+    }
+    rows.push({
+      kind: 'body',
+      code,
+      state,
+      mm: null,
+      grade,
+      value,
+      base: { ...CORRIDORS[angle] },
+      corridor,
+      angle,
+    });
+  });
+  return rows;
+}
+
 /** Какая фраза заменяет общий совет. Градус при этом не меняется. */
 export function leadingNote(
   key: AngleKey,

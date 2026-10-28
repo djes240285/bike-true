@@ -20,7 +20,16 @@ type Me = {
   email: string | null;
   role: string;
   providers: string[];
-  profile: { rider: RiderId | null; height_cm: number | null; inseam_cm: number | null } | null;
+  profile: {
+    rider: RiderId | null;
+    height_cm: number | null;
+    inseam_cm: number | null;
+    body_posterior?: string | null;
+    body_hip?: string | null;
+    body_ankle?: string | null;
+    body_shoulder?: string | null;
+    overhead?: { left?: Record<string, number | null>; right?: Record<string, number | null>; flags?: string[] } | null;
+  } | null;
 };
 
 type Bike = {
@@ -296,6 +305,69 @@ function Home({ locale, session, reload }: { locale: Locale; session: Session; r
   );
 }
 
+function PersonCard({ locale, profile }: { locale: Locale; profile: Me['profile'] }) {
+  const copy = dict[locale].analyze;
+  if (!profile) return null;
+  const grades = [
+    [copy.bodyPosterior, profile.body_posterior],
+    [copy.bodyHip, profile.body_hip],
+    [copy.bodyAnkle, profile.body_ankle],
+    [copy.bodyShoulder, profile.body_shoulder],
+  ] as const;
+  const gradeName = (grade: string) => (
+    grade === 'easy' ? copy.gradeEasy
+    : grade === 'reach' ? copy.gradeReach
+    : grade === 'effort' ? copy.gradeEffort
+    : grade === 'cant' ? copy.gradeCant
+    : grade
+  );
+  const flagName = (flag: string) => (
+    flag === 'knees-in' ? copy.overheadFlagKneesIn
+    : flag === 'knees-over' ? copy.overheadFlagKneesOver
+    : flag === 'knees-out' ? copy.overheadFlagKneesOut
+    : flag === 'shin-uneven' ? copy.overheadFlagShin
+    : flag === 'neck-uneven' ? copy.overheadFlagNeck
+    : flag === 'arms-open' ? copy.overheadFlagArmsOpen
+    : flag === 'arms-short' ? copy.overheadFlagArmsShort
+    : flag === 'hip-shallow' ? copy.overheadFlagHip
+    : flag
+  );
+  const chain = (side: Record<string, number | null> | undefined) => [
+    ['shin', copy.overheadShin],
+    ['knee', copy.overheadKnee],
+    ['hip', copy.overheadHip],
+    ['arm', copy.overheadArm],
+    ['neck', copy.overheadNeck],
+  ].flatMap(([key, label]) => {
+    const value = side?.[key];
+    return typeof value === 'number' ? [`${label} ${value}°`] : [];
+  }).join(' · ');
+  const marked = grades.some(([, grade]) => grade);
+  const overhead = profile.overhead;
+  if (!marked && !overhead) return null;
+  return (
+    <section className="factors">
+      <h3>{copy.factorBody}</h3>
+      <p>{copy.factorLead}</p>
+      {marked ? (
+        <ul>
+          {grades.filter(([, grade]) => grade).map(([label, grade]) => (
+            <li key={label}>{label}: {gradeName(grade ?? '')}</li>
+          ))}
+        </ul>
+      ) : null}
+      {overhead ? (
+        <>
+          <h3>{copy.overheadTitle}</h3>
+          <p>{copy.overheadLeft}: {chain(overhead.left) || '—'}</p>
+          <p>{copy.overheadRight}: {chain(overhead.right) || '—'}</p>
+          {(overhead.flags ?? []).map((flag) => <p key={flag}>{flagName(flag)}</p>)}
+        </>
+      ) : null}
+    </section>
+  );
+}
+
 function Body({ locale, me, onRider }: { locale: Locale; me: Me; onRider: (rider: RiderId | '') => void }) {
   const t = dict[locale].account;
   const [rider, setRider] = useState<string>(me.profile?.rider ?? '');
@@ -324,6 +396,7 @@ function Body({ locale, me, onRider }: { locale: Locale; me: Me; onRider: (rider
   }
 
   return (
+    <>
     <form onSubmit={submit}>
       <fieldset className="rider-pick">
         <legend>{t.rider}</legend>
@@ -360,6 +433,8 @@ function Body({ locale, me, onRider }: { locale: Locale; me: Me; onRider: (rider
       {status === 'saved' && <p className="note" role="status">{t.saved}</p>}
       {status === 'error' && <p className="warn" role="alert">{t.error}</p>}
     </form>
+    <PersonCard locale={locale} profile={me.profile} />
+    </>
   );
 }
 

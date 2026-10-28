@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { dict, type Locale } from '../i18n';
+import type { PersonOverhead } from '../lib/account';
 import { LEFT, RIGHT, crowd, pickSide, toPixels, type Point } from '../lib/reading';
-import { chainAngles, deepestIndex, kneeTrack, torsoAgainstShin, type ChainAngles, type KneeTrack, type TorsoCue } from '../lib/overhead';
-import { sampleTimes } from '../lib/stroke';
+import { chainAngles, deepestIndex, kneeTrack, overheadFlags, torsoAgainstShin, type ChainAngles, type KneeTrack, type OverheadFlag, type TorsoCue } from '../lib/overhead';
+import { sampleSpan, sampleTimes } from '../lib/stroke';
 import { poseAt, smoothPoses, type PoseFrame } from '../lib/track';
 import TextHint from './TextHint';
 
@@ -53,16 +54,26 @@ type ReadyClip = {
   left: ChainAngles;
   right: ChainAngles;
   bottomKnee: number | null;
+  flags: OverheadFlag[];
+  span: 'full' | 'minute' | 'capped';
 };
 
-function pill(context: CanvasRenderingContext2D, canvas: HTMLCanvasElement, x: number, y: number, text: string) {
+function pill(
+  context: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  x: number,
+  y: number,
+  text: string,
+  side: 'left' | 'right',
+) {
   const size = Math.max(14, canvas.width / 48);
   context.font = `600 ${size}px "Inter Variable", system-ui, sans-serif`;
   const pad = size * 0.45;
   const boxWidth = context.measureText(text).width + pad * 2;
   const boxHeight = size * 1.6;
-  const left = Math.min(canvas.width - boxWidth - 8, Math.max(8, x));
-  const top = Math.max(8, y - boxHeight - 8);
+  const raw = side === 'left' ? x - boxWidth - 10 : x + 10;
+  const left = Math.min(canvas.width - boxWidth - 8, Math.max(8, raw));
+  const top = Math.max(8, y - boxHeight / 2);
   context.fillStyle = 'rgba(28, 25, 23, 0.85)';
   context.beginPath();
   context.roundRect(left, top, boxWidth, boxHeight, boxHeight / 2);
@@ -118,13 +129,13 @@ function drawSquat(
       if (value === null) return;
       const joint = spot(at);
       if (!joint) return;
-      pill(context, canvas, joint.x, joint.y, `${name} ${Math.round(value)}°`);
+      pill(context, canvas, joint.x, joint.y, `${name} ${Math.round(value)}°`, side);
     };
     put(index.ankle, read.shin, labels.shin);
     put(index.knee, read.knee, labels.knee);
     put(index.hip, read.hip, labels.hip);
     put(index.elbow, read.arm, labels.arm);
-    put(ear, read.neck, labels.neck);
+    put(index.shoulder, read.neck, labels.neck);
   }
 }
 
@@ -146,11 +157,17 @@ export default function Overhead({
   ready,
   detect,
   onCue,
+  seatKnee,
+  generation = 0,
+  onPerson,
 }: {
   locale: Locale;
   ready: boolean;
   detect: Detect | null;
   onCue?: (text: string | null) => void;
+  seatKnee?: number | null;
+  generation?: number;
+  onPerson?: (card: PersonOverhead | null) => void;
 }) {
   const copy = dict[locale].analyze;
   const workRef = useRef<HTMLVideoElement>(null);
@@ -188,6 +205,19 @@ export default function Overhead({
   }, []);
 
   useEffect(() => {
+    if (!generation) return;
+    for (const clipUrl of urlsRef.current) URL.revokeObjectURL(clipUrl);
+    urlsRef.current = [];
+    setClips([]);
+    setPlayId(null);
+    setStatus('empty');
+    setProgress(0);
+    setStill(null);
+    setKnees(null);
+    setTorso(null);
+  }, [generation]);
+
+  useEffect(() => {
     const video = playRef.current;
     if (!video || !playing || mode !== 'clip') return;
     let frame = 0;
@@ -223,6 +253,21 @@ export default function Overhead({
     onCue?.(`${clips.map((clip) => clip.cue).join(' ')}${split}`);
   }, [clips, copy.overheadSplit, onCue]);
 
+  useEffect(() => {
+    if (!playing) {
+      onPerson?.(null);
+      return;
+    }
+    const round = (side: ChainAngles): ChainAngles => ({
+      shin: side.shin === null ? null : Math.round(side.shin),
+      knee: side.knee === null ? null : Math.round(side.knee),
+      hip: side.hip === null ? null : Math.round(side.hip),
+      arm: side.arm === null ? null : Math.round(side.arm),
+      neck: side.neck === null ? null : Math.round(side.neck),
+    });
+    onPerson?.({ left: round(playing.left), right: round(playing.right), flags: playing.flags });
+  }, [onPerson, playing]);
+
   if (!on) return null;
 
   async function analyze(file: File, report: (fraction: number) => void): Promise<'ok' | 'retake'> {
@@ -241,7 +286,7 @@ export default function Overhead({
         video.onloadedmetadata = () => resolve();
         video.onerror = () => reject(new Error('video'));
       });
-      const times = sampleTimes(video.duration, 1 / 8, 12);
+      const times = sampleTimes(video.duration);
       if (times.length === 0) {
         drop();
         return 'retake';
@@ -315,6 +360,8 @@ export default function Overhead({
         left,
         right,
         bottomKnee: right.knee ?? left.knee,
+        flags: overheadFlags(left, right, nextKnees),
+        span: sampleSpan(video.duration),
       };
       setClips((rows) => [...rows, clip]);
       setPlayId(clip.id);
@@ -474,6 +521,25 @@ export default function Overhead({
             return <p key={index === 0 ? 'left' : 'right'}>{index === 0 ? copy.overheadLeft : copy.overheadRight}: {line}</p>;
           })}
           {playing.left.knee != null && playing.right.knee != null ? <p className="note">{copy.overheadCompare}</p> : null}
+          <h3>{copy.overheadBriefTitle}</h3>
+          <p>{copy.overheadNotRide}</p>
+          {playing.left.neck != null || playing.right.neck != null ? <p>{copy.overheadNeckNote}</p> : null}
+          {playing.flags.map((flag) => (
+            <p key={flag}>{
+              flag === 'knees-in' ? copy.overheadFlagKneesIn
+              : flag === 'knees-over' ? copy.overheadFlagKneesOver
+              : flag === 'knees-out' ? copy.overheadFlagKneesOut
+              : flag === 'shin-uneven' ? copy.overheadFlagShin
+              : flag === 'neck-uneven' ? copy.overheadFlagNeck
+              : flag === 'arms-open' ? copy.overheadFlagArmsOpen
+              : flag === 'arms-short' ? copy.overheadFlagArmsShort
+              : copy.overheadFlagHip
+            }</p>
+          ))}
+          {seatKnee != null ? <p>{copy.overheadSeat.replace('{n}', String(Math.round(seatKnee)))}</p> : null}
+          <p className="note">{copy.overheadStay}</p>
+          {playing.span === 'minute' ? <p className="note">{copy.videoMinute}</p> : null}
+          {playing.span === 'capped' ? <p className="note">{copy.videoLong}</p> : null}
         </div>
       ) : null}
       {mode === 'photos' && status === 'done' ? (

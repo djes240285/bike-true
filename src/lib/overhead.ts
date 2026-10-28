@@ -120,6 +120,35 @@ export function frontalKnee(hip: Point, knee: Point, ankle: Point): number | nul
   return angleAt(hip, knee, ankle);
 }
 
+export type OverheadFlag =
+  | 'knees-in'
+  | 'knees-over'
+  | 'knees-out'
+  | 'shin-uneven'
+  | 'neck-uneven'
+  | 'arms-open'
+  | 'arms-short'
+  | 'hip-shallow';
+
+const apart = (left: number | null, right: number | null) =>
+  left !== null && right !== null && Math.abs(left - right) > 8;
+
+/** Сводка приседа для посадки. Градус на велосипеде отсюда не берётся. */
+export function overheadFlags(left: ChainAngles, right: ChainAngles, knees: KneeTrack | null): OverheadFlag[] {
+  const flags: OverheadFlag[] = [];
+  if (knees === 'in') flags.push('knees-in');
+  if (knees === 'over') flags.push('knees-over');
+  if (knees === 'out') flags.push('knees-out');
+  if (apart(left.shin, right.shin)) flags.push('shin-uneven');
+  if (apart(left.neck, right.neck)) flags.push('neck-uneven');
+  const arms = [left.arm, right.arm].filter((value): value is number => value !== null);
+  if (arms.length > 0 && arms.every((value) => value >= 160)) flags.push('arms-open');
+  else if (arms.some((value) => value < 150)) flags.push('arms-short');
+  const hips = [left.hip, right.hip].filter((value): value is number => value !== null);
+  if (hips.length > 0 && hips.every((value) => value > 150)) flags.push('hip-shallow');
+  return flags;
+}
+
 export type TorsoCue = 'forward' | 'with' | 'upright';
 
 /** Сбоку: корпус горизонтальнее голени, рядом с ней или вертикальнее. */

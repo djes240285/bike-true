@@ -3,6 +3,7 @@ import { dict, type Locale } from '../i18n';
 import { bandFor, type AngleKey } from '../lib/advice';
 import { readReading, writeReading } from '../lib/device';
 import { clearFrames, loadFrame, saveFrame } from '../lib/frames';
+import type { PersonOverhead } from '../lib/account';
 import type { SavedBike } from '../lib/bike-sync';
 import type { BodyLayer } from '../lib/layers';
 import { pathFor } from '../lib/paths';
@@ -66,11 +67,12 @@ export default function Analyzer({ locale }: { locale: Locale }) {
   const [film, setFilm] = useState<AngleReading | null>(null);
   const [layerBody, setLayerBody] = useState<BodyLayer>({});
   const [layerBike, setLayerBike] = useState<SavedBike | null>(null);
-  const [overheadText, setOverheadText] = useState<string | null>(null);
+  const [personOverhead, setPersonOverhead] = useState<PersonOverhead | null>(null);
+  const [epoch, setEpoch] = useState(0);
   const [hadTop, setHadTop] = useState(savedReading?.hadTop ?? false);
   const onLayer = useCallback((body: BodyLayer) => setLayerBody(body), []);
   const onBike = useCallback((bike: SavedBike | null) => setLayerBike(bike), []);
-  const onCue = useCallback((text: string | null) => setOverheadText(text), []);
+  const onPerson = useCallback((card: PersonOverhead | null) => setPersonOverhead(card), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -183,7 +185,8 @@ export default function Analyzer({ locale }: { locale: Locale }) {
   function reset() {
     setReading(emptyReading);
     setFilm(null);
-    setOverheadText(null);
+    setLayerBody({});
+    setPersonOverhead(null);
     setHadTop(false);
     setBottom('empty');
     setTop('empty');
@@ -193,11 +196,14 @@ export default function Analyzer({ locale }: { locale: Locale }) {
     setTopScene(null);
     writeReading(emptyReading, false);
     void clearFrames().catch(() => undefined);
+    setEpoch((value) => value + 1);
   }
 
   const filmReading = film && Object.values(film).some((value) => typeof value === 'number') ? film : null;
   const saved = filmReading ?? reading;
   const hasReading = Object.values(saved).some((value) => typeof value === 'number');
+  const bodyOn = Boolean(layerBody.posterior || layerBody.hip || layerBody.ankle || layerBody.shoulder);
+  const canSave = hasReading || bodyOn || personOverhead !== null;
 
   if (modelError) {
     return (
@@ -222,6 +228,8 @@ export default function Analyzer({ locale }: { locale: Locale }) {
   return (
     <div className="analyzer">
       {loading ? <p className="muted loading-line">{t.analyze.loading}</p> : null}
+      <p className="fit-lead">{t.analyze.fitLead}</p>
+      <p className="fit-lead">{t.analyze.factorLead}</p>
       <RideFilm
         locale={locale}
         ready={!loading}
@@ -232,14 +240,8 @@ export default function Analyzer({ locale }: { locale: Locale }) {
         }}
         onLayer={onLayer}
         bike={layerBike}
+        generation={epoch}
       />
-      <Overhead
-        locale={locale}
-        ready={!loading}
-        detect={landmarker.current ? (canvas) => landmarker.current!.detect(canvas) : null}
-        onCue={onCue}
-      />
-      <Picture locale={locale} photo={reading} film={filmReading} body={layerBody} bike={layerBike} overhead={overheadText} />
       <h2 className="photos-kicker">{t.analyze.photos}</h2>
       <div className="shots">
         <FramePanel
@@ -271,15 +273,32 @@ export default function Analyzer({ locale }: { locale: Locale }) {
           onFile={(file) => file && measure('top', file, true)}
         />
       </div>
+      <Picture locale={locale} photo={reading} film={filmReading} body={layerBody} bike={layerBike} />
+      <Overhead
+        locale={locale}
+        ready={!loading}
+        detect={landmarker.current ? (canvas) => landmarker.current!.detect(canvas) : null}
+        seatKnee={saved.knee}
+        generation={epoch}
+        onPerson={onPerson}
+      />
       <div className="analyzer-foot">
         <p className="note">{t.disclaimer}</p>
         <div className="actions">
           <a className="button" href={pathFor(locale, '/visit')}>{t.analyze.toVisit}</a>
-          {bottomScene || topScene || hasReading ? (
-            <button className="button ghost" type="button" onClick={reset}>{t.analyze.reset}</button>
-          ) : null}
+          <button className="button ghost" type="button" onClick={reset}>{t.analyze.reset}</button>
         </div>
-        {hasReading ? <SaveReading locale={locale} reading={saved} hadTop={hadTop || saved.hip !== null} onBike={onBike} /> : null}
+        {canSave ? <p className="note">{t.analyze.saveScope}</p> : null}
+        {canSave ? (
+          <SaveReading
+            locale={locale}
+            reading={saved}
+            hadTop={hadTop || saved.hip !== null}
+            onBike={onBike}
+            body={layerBody}
+            overhead={personOverhead}
+          />
+        ) : null}
       </div>
     </div>
   );

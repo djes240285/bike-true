@@ -39,13 +39,19 @@ describe('разбор оборотов', () => {
     expect(stroke.back).toBe(45);
   });
 
-  test('ролик длиннее пяти секунд читается до конца, потолок двадцать', () => {
+  test('до полуминуты читается целиком, до минуты реже, дальше берётся первая минута', () => {
     const twelve = sampleTimes(12);
     expect(twelve[0]).toBe(0);
     expect(twelve[twelve.length - 1]).toBeGreaterThan(10);
     const thirty = sampleTimes(30);
-    expect(thirty[thirty.length - 1]).toBeGreaterThan(19);
-    expect(thirty[thirty.length - 1]).toBeLessThanOrEqual(20);
+    expect(thirty[thirty.length - 1]).toBeGreaterThan(29);
+    expect(thirty.length).toBeGreaterThan(200);
+    const minute = sampleTimes(60);
+    expect(minute[minute.length - 1]).toBeGreaterThan(59);
+    expect(minute.length).toBeLessThanOrEqual(241);
+    const long = sampleTimes(90);
+    expect(long[long.length - 1]).toBeGreaterThan(59);
+    expect(long[long.length - 1]).toBeLessThanOrEqual(60);
     expect(sampleTimes(0.2)).toEqual([]);
   });
 

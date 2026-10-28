@@ -29,6 +29,13 @@
       "when": 1792874000000,
       "tag": "0003_reading_snapshot",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1793300000000,
+      "tag": "0004_person_card",
+      "breakpoints": true
     }
   ]
 }

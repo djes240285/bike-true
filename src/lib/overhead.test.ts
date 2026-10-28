@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { chainAngles, clearestKnees, deepestIndex, frontalKnee, kneeTrack, squatSide, torsoAgainstShin } from './overhead';
+import { chainAngles, clearestKnees, deepestIndex, frontalKnee, kneeTrack, overheadFlags, squatSide, torsoAgainstShin, type ChainAngles } from './overhead';
 
 const point = (x: number, y: number) => ({ x, y, visibility: 1 });
 
@@ -78,6 +78,18 @@ describe('оверхед', () => {
     expect(out).not.toBeNull();
     expect(straight as number).toBeGreaterThan(150);
     expect(out as number).toBeLessThan(straight as number);
+  });
+
+  test('сводка приседа не подменяет угол на велосипеде', () => {
+    const empty: ChainAngles = { shin: null, knee: null, hip: null, arm: null, neck: null };
+    const left: ChainAngles = { shin: 6, knee: 90, hip: 70, arm: 170, neck: 140 };
+    const right: ChainAngles = { shin: 20, knee: 88, hip: 72, arm: 140, neck: 155 };
+    expect(overheadFlags(left, right, 'in')).toEqual(['knees-in', 'shin-uneven', 'neck-uneven', 'arms-short']);
+    expect(overheadFlags({ ...empty, hip: 170, arm: 165 }, { ...empty, hip: 168, arm: 162 }, 'over')).toEqual([
+      'knees-over',
+      'arms-open',
+      'hip-shallow',
+    ]);
   });
 
   test('сбоку корпус впереди голени, если он заметно горизонтальнее', () => {

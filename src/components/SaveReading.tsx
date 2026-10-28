@@ -2,6 +2,8 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { dict, type Locale } from '../i18n';
 import { subscribeBikes, type SavedBike } from '../lib/bike-sync';
 import { apiUrl, cabinetFetch } from '../lib/cabinet-client';
+import type { PersonOverhead } from '../lib/account';
+import type { BodyLayer } from '../lib/layers';
 import { pathFor } from '../lib/paths';
 import type { AngleReading } from '../lib/reading';
 import BikeDialog from './BikeDialog';
@@ -26,11 +28,15 @@ export default function SaveReading({
   reading,
   hadTop,
   onBike,
+  body,
+  overhead,
 }: {
   locale: Locale;
   reading: AngleReading;
   hadTop: boolean;
   onBike?: (bike: SavedBike | null) => void;
+  body?: BodyLayer;
+  overhead?: PersonOverhead | null;
 }) {
   const t = dict[locale].account;
   const enabled = apiUrl() !== '';
@@ -118,23 +124,41 @@ export default function SaveReading({
     event.preventDefault();
     setStatus('');
     const selected = bikes.find((bike) => String(bike.id) === choice);
-    const body = {
-      fit: selected?.fit ?? 'endurance',
-      bike_id: selected ? selected.id : null,
-      knee: round(reading.knee),
-      back: round(reading.back),
-      arm: round(reading.arm),
-      hip: round(reading.hip),
-      had_top: hadTop,
-    };
+    const hasAngle = [reading.knee, reading.back, reading.arm, reading.hip].some((value) => value !== null);
+    const person: Record<string, unknown> = {};
+    if (body?.posterior || body?.hip || body?.ankle || body?.shoulder) {
+      person.posterior = body.posterior ?? null;
+      person.hip = body.hip ?? null;
+      person.ankle = body.ankle ?? null;
+      person.shoulder = body.shoulder ?? null;
+    }
+    if (overhead) person.overhead = overhead;
     try {
-      const res = await cabinetFetch('/readings', { method: 'POST', body: JSON.stringify(body) });
-      if (res.ok) {
-        setStatus('saved');
-        return;
+      if (hasAngle) {
+        const payload = {
+          fit: selected?.fit ?? 'endurance',
+          bike_id: selected ? selected.id : null,
+          knee: round(reading.knee),
+          back: round(reading.back),
+          arm: round(reading.arm),
+          hip: round(reading.hip),
+          had_top: hadTop,
+        };
+        const res = await cabinetFetch('/readings', { method: 'POST', body: JSON.stringify(payload) });
+        if (!res.ok) {
+          const data = await readJson<{ error?: string }>(res);
+          setStatus(data?.error === 'limit' ? 'limit' : 'error');
+          return;
+        }
       }
-      const data = await readJson<{ error?: string }>(res);
-      setStatus(data?.error === 'limit' ? 'limit' : 'error');
+      if (Object.keys(person).length > 0) {
+        const res = await cabinetFetch('/person', { method: 'PUT', body: JSON.stringify(person) });
+        if (!res.ok) {
+          setStatus('error');
+          return;
+        }
+      }
+      setStatus('saved');
     } catch {
       setStatus('error');
     }
