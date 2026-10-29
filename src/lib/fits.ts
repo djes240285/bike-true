@@ -1,7 +1,7 @@
-export type FitId = 'city' | 'endurance' | 'race' | 'mtb';
+export type FitId = 'city' | 'endurance' | 'race' | 'mtb' | 'gravel';
 export type RiderId = 'child' | 'teen' | 'adult';
 
-export const FIT_IDS: FitId[] = ['city', 'endurance', 'race', 'mtb'];
+export const FIT_IDS: FitId[] = ['city', 'endurance', 'gravel', 'race', 'mtb'];
 export const RIDER_IDS: RiderId[] = ['child', 'teen', 'adult'];
 
 export function isFit(value: unknown): value is FitId {

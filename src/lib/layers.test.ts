@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { corridorFor, explainFactors, layerNotes, leadingNote, readingsSplit, splitAngles } from './layers';
+import { corridorFor, explainFactors, keptReading, layerNotes, leadingNote, readingsSplit, saddleHeld, splitAngles, angleVoice } from './layers';
 
 const open = { knee: 145, back: 42, arm: 158, hip: 62 };
 
@@ -71,6 +71,36 @@ describe('согласие слоёв', () => {
     expect(splitAngles({ ...open, knee: 151 }, { ...open, knee: 156 })).toEqual([]);
   });
 
+  test('горный пускает более вертикальный корпус, гонка — более низкий', () => {
+    expect(corridorFor('back', null, 'mtb').max).toBe(58);
+    expect(corridorFor('back', null, 'race').min).toBe(32);
+    expect(corridorFor('back', null, 'gravel').min).toBe(40);
+    expect(corridorFor('knee', null, 'mtb')).toEqual({ min: 140, max: 150 });
+  });
+
+  test('разошедшиеся фото и ролик не становятся сохранённой цифрой', () => {
+    const photo = { ...open, knee: 151 };
+    const film = { ...open, knee: 160 };
+    expect(keptReading(photo, film, null).knee).toBeNull();
+    expect(keptReading(photo, film, null).back).toBe(42);
+  });
+
+  test('плавающий оборот не сохраняет среднее колена', () => {
+    expect(keptReading(open, null, { knee: 6, hip: 1 }).knee).toBeNull();
+    expect(keptReading(open, null, { knee: 2, hip: 1 }).knee).toBe(145);
+  });
+
+  test('жалоба, носок и разные голени удерживают совет про седло', () => {
+    expect(saddleHeld({ shin: true, toe: false, foot: false, hands: false, saddle: false, leg: false })).toBe(true);
+    expect(saddleHeld({ shin: false, toe: true, foot: false, hands: false, saddle: false, leg: false })).toBe(true);
+    expect(saddleHeld({ shin: false, toe: false, foot: false, hands: false, saddle: false, leg: false })).toBe(false);
+    expect(angleVoice('knee', 'high', 'race', 'hoods', true)).toBe('held');
+    expect(angleVoice('back', 'high', 'mtb', null, false)).toBe('back-easy');
+    expect(angleVoice('back', 'low', 'race', null, false)).toBe('back-race');
+    expect(angleVoice('arm', 'high', 'city', 'grips', false)).toBe('arm-grips');
+    expect(angleVoice('knee', 'in', 'city', 'hoods', false)).toBeNull();
+  });
+
   test('два ролика сбоку не усредняются, если разошлись', () => {
     expect(readingsSplit([{ ...open, knee: 150 }, { ...open, knee: 164 }])).toEqual(['knee']);
     expect(readingsSplit([{ ...open, knee: 150 }, { ...open, knee: 156 }])).toEqual([]);
@@ -97,5 +127,6 @@ describe('что вошло в расчёт', () => {
     expect(back?.corridor).toEqual({ min: 46, max: 50 });
     expect(reading.back).toBe(40);
     expect(explainFactors(open, null, { ankle: 'easy' }).find((row) => row.code === 'ankle')?.state).toBe('hold');
+    expect(explainFactors(open, null, null, 'mtb').find((row) => row.code === 'posterior')?.corridor.max).toBe(58);
   });
 });

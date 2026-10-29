@@ -7,11 +7,13 @@ export default function Pick({
   value,
   options,
   onChange,
+  compact = false,
 }: {
   label: string;
   value: string;
   options: Option[];
   onChange: (value: string) => void;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [up, setUp] = useState(false);
@@ -46,7 +48,7 @@ export default function Pick({
 
   return (
     <div className="pick" ref={root}>
-      <span id={listId} className="pick-label">{label}</span>
+      <span id={listId} className={compact ? 'sr-only' : 'pick-label'}>{label}</span>
       <button
         type="button"
         className="pick-button"

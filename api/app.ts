@@ -90,7 +90,7 @@ function readingJson(row: {
   id: number;
   bikeId: number | null;
   bikeName: string | null;
-  fit: 'city' | 'endurance' | 'race' | 'mtb';
+  fit: 'city' | 'endurance' | 'race' | 'mtb' | 'gravel';
   knee: number | null;
   back: number | null;
   arm: number | null;

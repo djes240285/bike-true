@@ -78,7 +78,7 @@ describe('bike', () => {
 
   test('имя, посадка и шаг за краем отклоняются', () => {
     expect(parseBike({ name: '   ', fit: 'city' })).toMatchObject({ error: 'name' });
-    expect(parseBike({ name: 'А', fit: 'gravel' })).toMatchObject({ error: 'fit' });
+    expect(parseBike({ name: 'А', fit: 'track' })).toMatchObject({ error: 'fit' });
     expect(parseBike({ name: 'А', fit: 'mtb', crank_mm: 119 })).toMatchObject({ error: 'bike' });
     expect(parseBike({ name: 'А', fit: 'mtb', drop_mm: 201 })).toMatchObject({ error: 'bike' });
     expect(parseBike({ name: 'А'.repeat(41), fit: 'city' })).toMatchObject({ error: 'name' });

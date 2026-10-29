@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Dict } from '../i18n';
+import type { Point } from '../lib/geometry';
 import { JOINT_NAMES, lerpJoints, type Joints } from '../lib/target';
 
 export type Scene = {
@@ -24,7 +25,7 @@ function phase(time: number): number {
   return 1 - ease((t - 0.8) / 0.2);
 }
 
-function draw(context: CanvasRenderingContext2D, scene: Scene, scale: number, k: number, copy: Dict['analyze']) {
+function draw(context: CanvasRenderingContext2D, scene: Scene, scale: number, k: number, copy: Dict['analyze'], marks: Point[]) {
   const { width, height } = context.canvas;
   context.clearRect(0, 0, width, height);
   context.drawImage(scene.image, 0, 0, width, height);
@@ -80,6 +81,13 @@ function draw(context: CanvasRenderingContext2D, scene: Scene, scale: number, k:
     context.fillStyle = k > 0.5 ? '#fde68a' : 'white';
     context.fillText(label, pad * 2, pad + boxHeight * 0.66);
   }
+
+  for (const mark of marks) {
+    context.fillStyle = '#fde68a';
+    context.beginPath();
+    context.arc(mark.x * scale, mark.y * scale, line * 2.2, 0, Math.PI * 2);
+    context.fill();
+  }
 }
 
 function pickVideoType() {
@@ -97,7 +105,19 @@ function download(blob: Blob, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
-export default function PoseStage({ scene, copy, name }: { scene: Scene; copy: Dict['analyze']; name: string }) {
+export default function PoseStage({
+  scene,
+  copy,
+  name,
+  marks = [],
+  onMark,
+}: {
+  scene: Scene;
+  copy: Dict['analyze'];
+  name: string;
+  marks?: Point[];
+  onMark?: (point: Point) => void;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [recording, setRecording] = useState(false);
   const videoType = useRef<string | null>(null);
@@ -115,18 +135,18 @@ export default function PoseStage({ scene, copy, name }: { scene: Scene; copy: D
     canvas.height = Math.round(scene.image.height * scale);
     const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches || !scene.changed;
     if (still) {
-      draw(context, scene, scale, 0, copy);
+      draw(context, scene, scale, 0, copy, marks);
       return;
     }
     let frame = 0;
     const start = performance.now();
     const tick = (now: number) => {
-      draw(context, scene, scale, phase(now - start), copy);
+      draw(context, scene, scale, phase(now - start), copy, marks);
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [scene, scale, copy]);
+  }, [scene, scale, copy, marks]);
 
   function saveImage() {
     const canvas = document.createElement('canvas');
@@ -134,7 +154,7 @@ export default function PoseStage({ scene, copy, name }: { scene: Scene; copy: D
     canvas.height = Math.round(scene.image.height * scale);
     const context = canvas.getContext('2d');
     if (!context) return;
-    draw(context, scene, scale, 0, copy);
+    draw(context, scene, scale, 0, copy, marks);
     canvas.toBlob((blob) => blob && download(blob, `biketrue-${name}.png`), 'image/png');
   }
 
@@ -157,9 +177,19 @@ export default function PoseStage({ scene, copy, name }: { scene: Scene; copy: D
   return (
     <div className="pose-stage">
       <div className="stage">
-        <canvas ref={canvasRef} />
+        <canvas
+          ref={canvasRef}
+          style={onMark ? { cursor: 'crosshair' } : undefined}
+          onClick={onMark ? (event) => {
+            const rect = event.currentTarget.getBoundingClientRect();
+            const x = ((event.clientX - rect.left) / rect.width) * scene.image.width;
+            const y = ((event.clientY - rect.top) / rect.height) * scene.image.height;
+            onMark({ x, y, visibility: 1 });
+          } : undefined}
+        />
       </div>
       <p className="muted">{scene.changed ? copy.ghostLegend : copy.ghostAllIn}</p>
+      {onMark ? <p className="muted">{copy.crankMark}</p> : null}
       <div className="actions">
         <button className="button ghost" type="button" onClick={saveImage}>
           {copy.saveImage}

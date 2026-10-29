@@ -36,6 +36,13 @@
       "when": 1793300000000,
       "tag": "0004_person_card",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1793400000000,
+      "tag": "0005_gravel_fit",
+      "breakpoints": true
     }
   ]
 }

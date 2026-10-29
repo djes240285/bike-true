@@ -448,7 +448,16 @@ export default function Overhead({
       <p className="sub-kicker">{copy.subNote}</p>
       <h2>
         {copy.overheadTitle}
-        <TextHint label={copy.overheadHelpTitle} title={copy.overheadHelpTitle} text={copy.overheadHelp} steps={copy.overheadSteps} />
+        <TextHint
+          label={copy.overheadHelpTitle}
+          title={copy.overheadHelpTitle}
+          text={copy.overheadHelp}
+          steps={copy.overheadSteps}
+          images={[
+            { src: '/motion/overhead/front.jpg', caption: copy.overheadFront },
+            { src: '/motion/overhead/side.jpg', caption: copy.overheadSide },
+          ]}
+        />
       </h2>
       <p>{copy.overheadHint}</p>
       <div className="grades" role="group" aria-label={copy.overheadTitle}>

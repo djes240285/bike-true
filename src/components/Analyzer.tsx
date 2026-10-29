@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { dict, type Locale } from '../i18n';
-import { bandFor, type AngleKey } from '../lib/advice';
+import { band, type AngleKey } from '../lib/advice';
 import { readReading, writeReading } from '../lib/device';
 import { clearFrames, loadFrame, saveFrame } from '../lib/frames';
 import type { PersonOverhead } from '../lib/account';
 import type { SavedBike } from '../lib/bike-sync';
-import type { BodyLayer } from '../lib/layers';
+import { corridorFor, keptReading, saddleHeld, angleVoice, type BodyLayer } from '../lib/layers';
 import { pathFor } from '../lib/paths';
-import { crowd, readFrame, toPixels, type AngleReading, type Frame, type Point } from '../lib/reading';
+import { crowd, footStance, readFrame, toPixels, type AngleReading, type Frame, type Point } from '../lib/reading';
+import { crankScale, shiftMm, type AnkleStance } from '../lib/foot';
+import type { FitId } from '../lib/fits';
 import { idealBottom, idealTop, jointsOf, moved } from '../lib/target';
 import PoseStage, { type Scene } from './PoseStage';
 import RideFilm from './RideFilm';
@@ -51,6 +53,15 @@ const EXAMPLES: Record<'bottom' | 'top', { src: string; joints: ExamplePose }> =
 const LABEL_AT: Record<AngleKey, keyof ExamplePose> = { knee: 'knee', back: 'hip', arm: 'elbow', hip: 'hip' };
 
 const emptyReading: AngleReading = { knee: null, back: null, arm: null, hip: null };
+
+function poseBands(body: BodyLayer, fit: FitId | null) {
+  return {
+    knee: corridorFor('knee', body, fit),
+    back: corridorFor('back', body, fit),
+    arm: corridorFor('arm', body, fit),
+    hip: corridorFor('hip', body, fit),
+  };
+}
 const savedReading = readReading();
 
 export default function Analyzer({ locale }: { locale: Locale }) {
@@ -65,14 +76,29 @@ export default function Analyzer({ locale }: { locale: Locale }) {
   const [topScene, setTopScene] = useState<Scene | null>(null);
   const [reading, setReading] = useState<AngleReading>(savedReading?.reading ?? emptyReading);
   const [film, setFilm] = useState<AngleReading | null>(null);
+  const [source, setSource] = useState<'film' | 'photos' | null>(
+    savedReading && Object.values(savedReading.reading).some((value) => typeof value === 'number') ? 'photos' : null,
+  );
   const [layerBody, setLayerBody] = useState<BodyLayer>({});
   const [layerBike, setLayerBike] = useState<SavedBike | null>(null);
   const [personOverhead, setPersonOverhead] = useState<PersonOverhead | null>(null);
+  const [fitChoice, setFitChoice] = useState<FitId | null>(null);
+  const [hands, setHands] = useState<'hoods' | 'drops' | 'tops' | 'grips' | null>(null);
+  const [pains, setPains] = useState({ foot: false, hands: false, saddle: false, leg: false });
+  const [spread, setSpread] = useState<{ knee: number | null; hip: number | null } | null>(null);
+  const [photoAnkle, setPhotoAnkle] = useState<AnkleStance | null>(null);
+  const [filmAnkle, setFilmAnkle] = useState<AnkleStance | null>(null);
+  const [marks, setMarks] = useState<Point[]>([]);
   const [epoch, setEpoch] = useState(0);
   const [hadTop, setHadTop] = useState(savedReading?.hadTop ?? false);
   const onLayer = useCallback((body: BodyLayer) => setLayerBody(body), []);
   const onBike = useCallback((bike: SavedBike | null) => setLayerBike(bike), []);
   const onPerson = useCallback((card: PersonOverhead | null) => setPersonOverhead(card), []);
+  const fitTouched = useRef(false);
+  useEffect(() => {
+    if (fitTouched.current || !layerBike) return;
+    setFitChoice(layerBike.fit);
+  }, [layerBike]);
 
   useEffect(() => {
     let cancelled = false;
@@ -146,7 +172,14 @@ export default function Analyzer({ locale }: { locale: Locale }) {
     canvas.width = image.width;
     canvas.height = image.height;
     canvas.getContext('2d')?.drawImage(image, 0, 0);
-    const result = landmarker.current.detect(canvas);
+    let result: { landmarks?: Point[][] };
+    try {
+      result = landmarker.current.detect(canvas);
+    } catch {
+      image.close();
+      setStatus('retake');
+      return;
+    }
     const poses = (result.landmarks ?? []) as Point[][];
     if (crowd(poses)) {
       image.close();
@@ -168,9 +201,11 @@ export default function Analyzer({ locale }: { locale: Locale }) {
       setStatus('retake');
       return;
     }
-    const ideal = frame === 'bottom' ? idealBottom(current) : idealTop(current);
+    const bands = poseBands(layerBody, fitChoice);
+    const ideal = frame === 'bottom' ? idealBottom(current, bands) : idealTop(current, bands);
     setScene({ image, current, ideal, changed: moved(current, ideal, image.width / 200) });
     setReading((value) => ({ ...value, ...stripNulls(next) }));
+    if (frame === 'bottom') setPhotoAnkle(footStance(pixels));
     if (frame === 'top') setHadTop(true);
     setStatus('done');
     if (!persist) return;
@@ -182,9 +217,28 @@ export default function Analyzer({ locale }: { locale: Locale }) {
   }
   measureRef.current = measure;
 
+  useEffect(() => {
+    const bands = poseBands(layerBody, fitChoice);
+    setBottomScene((scene) => {
+      if (!scene) return scene;
+      const ideal = idealBottom(scene.current, bands);
+      return { ...scene, ideal, changed: moved(scene.current, ideal, scene.image.width / 200) };
+    });
+    setTopScene((scene) => {
+      if (!scene) return scene;
+      const ideal = idealTop(scene.current, bands);
+      return { ...scene, ideal, changed: moved(scene.current, ideal, scene.image.width / 200) };
+    });
+  }, [layerBody, fitChoice]);
+
   function reset() {
     setReading(emptyReading);
     setFilm(null);
+    setSource(null);
+    setSpread(null);
+    setPhotoAnkle(null);
+    setFilmAnkle(null);
+    setMarks([]);
     setLayerBody({});
     setPersonOverhead(null);
     setHadTop(false);
@@ -199,8 +253,23 @@ export default function Analyzer({ locale }: { locale: Locale }) {
     setEpoch((value) => value + 1);
   }
 
-  const filmReading = film && Object.values(film).some((value) => typeof value === 'number') ? film : null;
-  const saved = filmReading ?? reading;
+  const filmOn = source === 'film';
+  const photosOn = source === 'photos';
+  const filmReading = filmOn && film && Object.values(film).some((value) => typeof value === 'number') ? film : null;
+  const photoReading = photosOn ? reading : emptyReading;
+  const saved = keptReading(photoReading, filmReading, filmOn ? spread : null);
+  const ankle = filmOn ? filmAnkle : photosOn ? photoAnkle : null;
+  const holdKnee = saddleHeld({
+    shin: personOverhead?.flags.includes('shin-uneven') ?? false,
+    toe: ankle === 'toe',
+    foot: pains.foot,
+    hands: pains.hands,
+    saddle: pains.saddle,
+    leg: pains.leg,
+  });
+  const crankMm = layerBike?.crank_mm ?? null;
+  const scale = marks.length === 2 && crankMm ? crankScale(marks[0], marks[1], crankMm) : null;
+  const saddleStep = scale && bottomScene ? shiftMm(bottomScene.current.hip, bottomScene.ideal.hip, scale) : null;
   const hasReading = Object.values(saved).some((value) => typeof value === 'number');
   const bodyOn = Boolean(layerBody.posterior || layerBody.hip || layerBody.ankle || layerBody.shoulder);
   const canSave = hasReading || bodyOn || personOverhead !== null;
@@ -208,16 +277,31 @@ export default function Analyzer({ locale }: { locale: Locale }) {
   if (modelError) {
     return (
       <div className="analyzer">
+        <SaveReading
+          locale={locale}
+          reading={saved}
+          hadTop={hadTop || saved.hip !== null}
+          onBike={onBike}
+          fit={fitChoice}
+          canSave={hasReading}
+        />
         <p className="warn">{modelError}</p>
         {hasReading ? (
           <>
             <p className="note">{t.analyze.kept}</p>
-            <AngleList locale={locale} reading={reading} keys={['knee', 'back', 'arm', 'hip']} />
+            <AngleList
+              locale={locale}
+              reading={reading}
+              keys={['knee', 'back', 'arm', 'hip']}
+              fit={fitChoice}
+              hands={hands}
+              holdKnee={holdKnee}
+              body={layerBody}
+            />
             <div className="analyzer-foot">
               <div className="actions">
                 <a className="button" href={pathFor(locale, '/visit')}>{t.analyze.toVisit}</a>
               </div>
-              <SaveReading locale={locale} reading={saved} hadTop={hadTop || saved.hip !== null} onBike={onBike} />
             </div>
           </>
         ) : null}
@@ -227,53 +311,135 @@ export default function Analyzer({ locale }: { locale: Locale }) {
 
   return (
     <div className="analyzer">
+      <SaveReading
+        locale={locale}
+        reading={saved}
+        hadTop={hadTop || saved.hip !== null}
+        onBike={onBike}
+        body={layerBody}
+        overhead={personOverhead}
+        fit={fitChoice}
+        canSave={canSave}
+      />
       {loading ? <p className="muted loading-line">{t.analyze.loading}</p> : null}
       <p className="fit-lead">{t.analyze.fitLead}</p>
-      <p className="fit-lead">{t.analyze.factorLead}</p>
-      <RideFilm
-        locale={locale}
-        ready={!loading}
-        detect={landmarker.current ? (canvas) => landmarker.current!.detect(canvas) : null}
-        onReading={(next, top) => {
-          setFilm(next);
-          if (top) setHadTop(true);
-        }}
-        onLayer={onLayer}
-        bike={layerBike}
-        generation={epoch}
-      />
-      <h2 className="photos-kicker">{t.analyze.photos}</h2>
-      <div className="shots">
-        <FramePanel
-          letter="A"
-          title={t.analyze.bottom}
-          hint={t.analyze.bottomHint}
-          example="bottom"
-          status={bottom}
-          scene={bottomScene}
-          name="bottom"
+      <section className="ask">
+        <p>{t.analyze.askFit}</p>
+        <div className="ask-row">
+          {(['city', 'endurance', 'gravel', 'race', 'mtb'] as FitId[]).map((id) => (
+            <button key={id} className={`button ghost${fitChoice === id ? ' is-on' : ''}`} type="button" aria-pressed={fitChoice === id} onClick={() => { fitTouched.current = true; setFitChoice(id); }}>
+              {t.account[id]}
+            </button>
+          ))}
+        </div>
+        {fitChoice ? <p className="note">{t.analyze.fitNotes[fitChoice]}</p> : null}
+        <p>{t.analyze.askHands}</p>
+        <div className="ask-row">
+          {([
+            ['hoods', t.analyze.handsHoods],
+            ['drops', t.analyze.handsDrops],
+            ['tops', t.analyze.handsTops],
+            ['grips', t.analyze.handsGrips],
+          ] as const).map(([id, label]) => (
+            <button key={id} className={`button ghost${hands === id ? ' is-on' : ''}`} type="button" aria-pressed={hands === id} onClick={() => setHands(id)}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <p>{t.analyze.askPain}</p>
+        <div className="ask-row">
+          {([
+            ['foot', t.analyze.painFoot],
+            ['hands', t.analyze.painHands],
+            ['saddle', t.analyze.painSaddle],
+            ['leg', t.analyze.painLeg],
+          ] as const).map(([id, label]) => (
+            <button key={id} className={`button ghost${pains[id] ? ' is-on' : ''}`} type="button" aria-pressed={pains[id]} onClick={() => setPains((current) => ({ ...current, [id]: !current[id] }))}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </section>
+      <p className="fit-lead">{t.analyze.sourcePick}</p>
+      <div className="ask-row" role="group" aria-label={t.analyze.sourcePick}>
+        <button className={`button ghost${source === 'film' ? ' is-on' : ''}`} type="button" aria-pressed={source === 'film'} onClick={() => setSource('film')}>
+          {t.analyze.videoTitle}
+        </button>
+        <button className={`button ghost${source === 'photos' ? ' is-on' : ''}`} type="button" aria-pressed={source === 'photos'} onClick={() => setSource('photos')}>
+          {t.analyze.photos}
+        </button>
+      </div>
+      <div hidden={source !== 'film'}>
+        <RideFilm
           locale={locale}
-          reading={reading}
-          keys={['knee', 'back', 'arm']}
-          disabled={loading}
-          onFile={(file) => file && measure('bottom', file, true)}
-        />
-        <FramePanel
-          letter="B"
-          title={t.analyze.top}
-          hint={t.analyze.topOptional}
-          example="top"
-          status={top}
-          scene={topScene}
-          name="top"
-          locale={locale}
-          reading={reading}
-          keys={['hip']}
-          disabled={loading}
-          onFile={(file) => file && measure('top', file, true)}
+          ready={!loading}
+          detect={landmarker.current ? (canvas) => landmarker.current!.detect(canvas) : null}
+          onReading={(next, top, extra) => {
+            setFilm(next);
+            setSpread({ knee: extra.kneeSpread, hip: extra.hipSpread });
+            setFilmAnkle(extra.ankle);
+            if (top) setHadTop(true);
+          }}
+          onLayer={onLayer}
+          bike={layerBike}
+          fit={fitChoice}
+          generation={epoch}
         />
       </div>
-      <Picture locale={locale} photo={reading} film={filmReading} body={layerBody} bike={layerBike} />
+      <div className="shots" hidden={source !== 'photos'}>
+          <FramePanel
+            letter="A"
+            title={t.analyze.bottom}
+            hint={t.analyze.bottomHint}
+            example="bottom"
+            status={bottom}
+            scene={bottomScene}
+            name="bottom"
+            locale={locale}
+            reading={reading}
+            keys={['knee', 'back', 'arm']}
+            disabled={loading}
+            onFile={(file) => file && measure('bottom', file, true)}
+            marks={marks}
+            onMark={(point) => setMarks((current) => (current.length >= 2 ? [point] : [...current, point]))}
+            fit={fitChoice}
+            hands={hands}
+            holdKnee={holdKnee}
+            body={layerBody}
+          />
+          <FramePanel
+            letter="B"
+            title={t.analyze.top}
+            hint={t.analyze.topOptional}
+            example="top"
+            status={top}
+            scene={topScene}
+            name="top"
+            locale={locale}
+            reading={reading}
+            keys={['hip']}
+            disabled={loading}
+            onFile={(file) => file && measure('top', file, true)}
+            fit={fitChoice}
+            hands={hands}
+            holdKnee={holdKnee}
+            body={layerBody}
+        />
+      </div>
+      <Picture
+        locale={locale}
+        photo={photoReading}
+        film={filmReading}
+        body={layerBody}
+        bike={source ? layerBike : null}
+        fit={fitChoice}
+        hands={hands}
+        holdKnee={holdKnee}
+        ankle={ankle}
+        saddleStep={photosOn ? saddleStep : null}
+        ruler={photosOn}
+        spread={spread}
+      />
       <Overhead
         locale={locale}
         ready={!loading}
@@ -289,16 +455,6 @@ export default function Analyzer({ locale }: { locale: Locale }) {
           <button className="button ghost" type="button" onClick={reset}>{t.analyze.reset}</button>
         </div>
         {canSave ? <p className="note">{t.analyze.saveScope}</p> : null}
-        {canSave ? (
-          <SaveReading
-            locale={locale}
-            reading={saved}
-            hadTop={hadTop || saved.hip !== null}
-            onBike={onBike}
-            body={layerBody}
-            overhead={personOverhead}
-          />
-        ) : null}
       </div>
     </div>
   );
@@ -317,6 +473,12 @@ function FramePanel({
   keys,
   disabled,
   onFile,
+  marks,
+  onMark,
+  fit,
+  hands,
+  holdKnee,
+  body,
 }: {
   letter: string;
   title: string;
@@ -330,6 +492,12 @@ function FramePanel({
   keys: AngleKey[];
   disabled: boolean;
   onFile: (file: File | undefined) => void;
+  marks?: Point[];
+  onMark?: (point: Point) => void;
+  fit: FitId | null;
+  hands: 'hoods' | 'drops' | 'tops' | 'grips' | null;
+  holdKnee: boolean;
+  body: BodyLayer;
 }) {
   const t = dict[locale];
   const copy = t.analyze;
@@ -359,7 +527,7 @@ function FramePanel({
 
       {scene ? (
         <>
-          <PoseStage scene={scene} copy={copy} name={name} />
+          <PoseStage scene={scene} copy={copy} name={name} marks={marks} onMark={onMark} />
           <label className="button ghost shot-replace">
             {copy.replace}
             {picker}
@@ -408,7 +576,7 @@ function FramePanel({
         return (
           <>
             {saved ? <p className="note">{copy.kept}</p> : null}
-            <AngleList locale={locale} reading={reading} keys={keys} />
+            <AngleList locale={locale} reading={reading} keys={keys} fit={fit} hands={hands} holdKnee={holdKnee} body={body} />
           </>
         );
       })()}
@@ -447,8 +615,25 @@ function ExampleFigure({ kind, keys, locale }: { kind: 'bottom' | 'top'; keys: A
   );
 }
 
-function AngleList({ locale, reading, keys }: { locale: Locale; reading: AngleReading; keys: AngleKey[] }) {
+function AngleList({
+  locale,
+  reading,
+  keys,
+  fit,
+  hands,
+  holdKnee,
+  body,
+}: {
+  locale: Locale;
+  reading: AngleReading;
+  keys: AngleKey[];
+  fit: FitId | null;
+  hands: 'hoods' | 'drops' | 'tops' | 'grips' | null;
+  holdKnee: boolean;
+  body: BodyLayer;
+}) {
   const t = dict[locale];
+  const copy = t.analyze;
   return (
     <div className="angles">
       {keys.map((key) => {
@@ -459,18 +644,29 @@ function AngleList({ locale, reading, keys }: { locale: Locale; reading: AngleRe
               <b>—</b>
               <span>
                 <strong>{t.angles[key].label}</strong>
-                {t.analyze.notVisible}
+                {copy.notVisible}
               </span>
             </article>
           );
         }
-        const zone = bandFor(key, value);
+        const corridor = corridorFor(key, body, fit);
+        const zone = band(value, corridor.min, corridor.max);
+        const voice = angleVoice(key, zone, fit, hands, holdKnee);
+        const sentence = voice === 'held'
+          ? copy.saddleHeld
+          : voice === 'back-easy'
+            ? copy.backEasy
+            : voice === 'back-race'
+              ? copy.backRace
+              : voice === 'arm-grips'
+                ? copy.armGrips
+                : t.advice[key][zone];
         return (
           <article key={key} className={`readout ${zone}`}>
             <b>{value.toFixed(0)}°</b>
             <span>
               <strong>{t.angles[key].label}</strong>
-              {t.advice[key][zone]}
+              {sentence}
             </span>
           </article>
         );

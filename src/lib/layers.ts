@@ -1,4 +1,5 @@
 import { band, CORRIDORS, type AngleKey } from './advice';
+import type { FitId } from './fits';
 import type { AngleReading } from './reading';
 
 export type Grade = 'easy' | 'reach' | 'effort' | 'cant';
@@ -31,8 +32,11 @@ export type NoteCode =
 
 const tight = (grade: Grade | undefined) => grade === 'effort' || grade === 'cant';
 
-export function corridorFor(key: AngleKey, body: BodyLayer | null): { min: number; max: number } {
+export function corridorFor(key: AngleKey, body: BodyLayer | null, fit: FitId | null = null): { min: number; max: number } {
   const base = { ...CORRIDORS[key] };
+  if (key === 'back' && fit === 'mtb') base.max = 58;
+  if (key === 'back' && fit === 'race') base.min = 32;
+  if (key === 'back' && (fit === 'gravel' || fit === 'city')) base.min = 40;
   if (!body) return base;
   if (key === 'knee' && body.ankle === 'cant') return { ...base, max: 142 };
   if (key === 'knee' && body.ankle === 'effort') return { ...base, max: 146 };
@@ -100,7 +104,7 @@ export type Factor = {
 };
 
 /** Что реально вошло в фразу. Градус с камеры здесь не меняется. */
-export function explainFactors(reading: AngleReading, bike: BikeBits | null, body: BodyLayer | null): Factor[] {
+export function explainFactors(reading: AngleReading, bike: BikeBits | null, body: BodyLayer | null, fit: FitId | null = null): Factor[] {
   const zone = (key: AngleKey, value: number | null) => {
     if (value === null) return null;
     const corridor = CORRIDORS[key];
@@ -119,7 +123,7 @@ export function explainFactors(reading: AngleReading, bike: BikeBits | null, bod
     grade: null,
     value: reading[angle],
     base: { ...CORRIDORS[angle] },
-    corridor: { ...CORRIDORS[angle] },
+    corridor: corridorFor(angle, body, fit),
     angle,
   });
   const crank = bike?.crankMm ?? null;
@@ -148,7 +152,7 @@ export function explainFactors(reading: AngleReading, bike: BikeBits | null, bod
   (['posterior', 'hip', 'ankle', 'shoulder'] as const).forEach((code) => {
     const angle = BODY_ANGLE[code];
     const grade = body?.[code] ?? null;
-    const corridor = corridorFor(angle, body);
+    const corridor = corridorFor(angle, body, fit);
     const value = reading[angle];
     let state: FactorState = 'missing';
     if (grade === 'easy' || grade === 'reach') state = 'hold';
@@ -194,6 +198,50 @@ export function readingsSplit(readings: AngleReading[], limit = 8): AngleKey[] {
     if (values.length < 2) return false;
     return Math.max(...values) - Math.min(...values) > limit;
   });
+}
+
+export type SaddleFlags = {
+  shin: boolean;
+  toe: boolean;
+  foot: boolean;
+  hands: boolean;
+  saddle: boolean;
+  leg: boolean;
+};
+
+/** Жалоба, носок или разные голени: совет про высоту седла не выходит. */
+export function saddleHeld(flags: SaddleFlags): boolean {
+  return flags.shin || flags.toe || flags.foot || flags.hands || flags.saddle || flags.leg;
+}
+
+/** Особая фраза вместо обычного совета. null — остаётся фраза коридора. */
+export function angleVoice(
+  key: AngleKey,
+  zone: 'low' | 'in' | 'high',
+  fit: FitId | null,
+  hands: 'hoods' | 'drops' | 'tops' | 'grips' | null,
+  holdKnee: boolean,
+): 'held' | 'back-easy' | 'back-race' | 'arm-grips' | null {
+  if (key === 'knee' && holdKnee) return 'held';
+  if (key === 'back' && zone === 'high' && (fit === 'mtb' || fit === 'city' || fit === 'gravel')) return 'back-easy';
+  if (key === 'back' && zone === 'low' && fit === 'race') return 'back-race';
+  if (key === 'arm' && zone === 'high' && hands === 'grips') return 'arm-grips';
+  return null;
+}
+
+/** Что можно записать. Разошедшиеся слои и плывущий оборот в запись не попадают. */
+export function keptReading(
+  photo: AngleReading,
+  film: AngleReading | null,
+  spread: { knee: number | null; hip: number | null } | null,
+): AngleReading {
+  const next: AngleReading = { ...(film ?? photo) };
+  if (film) {
+    for (const key of splitAngles(photo, film)) next[key] = null;
+  }
+  if ((spread?.knee ?? 0) > 4) next.knee = null;
+  if ((spread?.hip ?? 0) > 4) next.hip = null;
+  return next;
 }
 
 /** Фото и ролик расходятся сильнее, чем можно списать на ракурс. */

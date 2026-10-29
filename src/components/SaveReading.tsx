@@ -6,6 +6,7 @@ import type { PersonOverhead } from '../lib/account';
 import type { BodyLayer } from '../lib/layers';
 import { pathFor } from '../lib/paths';
 import type { AngleReading } from '../lib/reading';
+import type { FitId } from '../lib/fits';
 import BikeDialog from './BikeDialog';
 import Pick from './Pick';
 
@@ -30,6 +31,8 @@ export default function SaveReading({
   onBike,
   body,
   overhead,
+  fit = null,
+  canSave,
 }: {
   locale: Locale;
   reading: AngleReading;
@@ -37,6 +40,8 @@ export default function SaveReading({
   onBike?: (bike: SavedBike | null) => void;
   body?: BodyLayer;
   overhead?: PersonOverhead | null;
+  fit?: FitId | null;
+  canSave: boolean;
 }) {
   const t = dict[locale].account;
   const enabled = apiUrl() !== '';
@@ -101,24 +106,38 @@ export default function SaveReading({
   }, [enabled]);
 
   useEffect(() => {
+    const header = document.querySelector('.top');
+    if (!header) return undefined;
+    const apply = () => {
+      document.documentElement.style.setProperty('--top-height', `${header.getBoundingClientRect().height}px`);
+    };
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     if (phase !== 'ready') return;
     const selected = choice ? bikes.find((item) => String(item.id) === choice) ?? null : null;
     onBike?.(selected);
   }, [phase, choice, bikes, onBike]);
 
-  if (!enabled) return <p className="note">{t.unavailable}</p>;
+  if (!enabled) return canSave ? <p className="note">{t.unavailable}</p> : null;
 
   if (phase === 'out') {
+    if (!canSave) return null;
     const href = pathFor(locale, '/account') + '?next=' + encodeURIComponent(pathFor(locale, '/analyze'));
     return (
-      <p>
-        <a className="button" href={href}>{t.saveReading}</a>
+      <p className="bike-dock">
+        <BikeGlyph />
+        <a className="bike-dock-signin" href={href}>{t.saveReading}</a>
       </p>
     );
   }
 
   if (phase === 'loading') return null;
-  if (phase === 'error') return <p className="warn" role="alert">{t.error}</p>;
+  if (phase === 'error') return canSave ? <p className="warn" role="alert">{t.error}</p> : null;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -136,7 +155,7 @@ export default function SaveReading({
     try {
       if (hasAngle) {
         const payload = {
-          fit: selected?.fit ?? 'endurance',
+          fit: fit ?? selected?.fit ?? 'endurance',
           bike_id: selected ? selected.id : null,
           knee: round(reading.knee),
           back: round(reading.back),
@@ -171,19 +190,49 @@ export default function SaveReading({
 
   return (
     <>
-    <form className="save-reading" onSubmit={submit}>
-      <div className="save-bike">
-        <Pick label={t.pickBike} value={choice} options={options} onChange={setChoice} />
-        {subscription ? (
-          <button className="button ghost" type="button" onClick={() => setDialog(true)}>{dict[locale].analyze.addBike}</button>
-        ) : null}
-      </div>
-      <button className="button" type="submit">{t.saveReading}</button>
-      {status === 'saved' && <p className="note" role="status">{t.saved}</p>}
-      {status === 'error' && <p className="warn" role="alert">{t.error}</p>}
-      {status === 'limit' && <p className="warn" role="alert">{t.limit}</p>}
+    <form className="bike-dock" onSubmit={submit}>
+      <BikeGlyph />
+      <Pick compact label={t.pickBike} value={choice} options={options} onChange={setChoice} />
+      {status === 'saved' ? <span className="bike-dock-status" role="status">{t.saved}</span> : null}
+      {status === 'error' || status === 'limit' ? <span className="bike-dock-status is-warn" role="alert">{status === 'limit' ? t.limit : t.error}</span> : null}
+      {subscription ? (
+        <button className="bike-dock-icon" type="button" aria-label={dict[locale].analyze.addBike} onClick={() => setDialog(true)}>
+          <PlusGlyph />
+        </button>
+      ) : null}
+      {canSave ? (
+        <button className="bike-dock-icon" type="submit" aria-label={t.saveReading}>
+          <SaveGlyph />
+        </button>
+      ) : null}
     </form>
     <BikeDialog locale={locale} open={dialog} onClose={() => setDialog(false)} />
     </>
+  );
+}
+
+function BikeGlyph() {
+  return (
+    <svg className="bike-glyph" viewBox="0 0 32 32" aria-hidden="true">
+      <circle cx="8" cy="23" r="5" />
+      <circle cx="24" cy="23" r="5" />
+      <path d="M8 23 14 12h7L24 23M14 12 18 23M12.5 10h4M20 10h4" />
+    </svg>
+  );
+}
+
+function PlusGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 6v12M6 12h12" />
+    </svg>
+  );
+}
+
+function SaveGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 4h10v16l-5-3-5 3z" />
+    </svg>
   );
 }

@@ -5,11 +5,13 @@ export default function TextHint({
   title,
   text,
   steps,
+  images = [],
 }: {
   label: string;
   title: string;
   text: string;
   steps: string[];
+  images?: { src: string; caption: string }[];
 }) {
   const [open, setOpen] = useState(false);
   const pinned = useRef(false);
@@ -89,6 +91,16 @@ export default function TextHint({
       </button>
       {open && (
         <span className="hint-card" role="dialog" aria-labelledby={titleId} ref={cardRef}>
+          {images.length > 0 ? (
+            <span className="hint-shots">
+              {images.map((image) => (
+                <span key={image.src}>
+                  <img src={image.src} alt={image.caption} width="640" height="480" />
+                  <em>{image.caption}</em>
+                </span>
+              ))}
+            </span>
+          ) : null}
           <strong id={titleId}>{title}</strong>
           <p>{text}</p>
           <ol>

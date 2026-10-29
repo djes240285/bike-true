@@ -56,6 +56,7 @@ export type Dict = {
       title: string;
       down: { title: string; text: string };
       up: { title: string; text: string };
+      marks: string;
     };
     next: string;
   };
@@ -101,6 +102,30 @@ export type Dict = {
     videoLong: string;
     videoMinute: string;
     fitLead: string;
+    sourcePick: string;
+    askFit: string;
+    fitNotes: Record<'city' | 'endurance' | 'gravel' | 'race' | 'mtb', string>;
+    askHands: string;
+    askPain: string;
+    handsHoods: string;
+    handsDrops: string;
+    handsTops: string;
+    handsGrips: string;
+    painFoot: string;
+    painHands: string;
+    painSaddle: string;
+    painLeg: string;
+    saddleHeld: string;
+    ankleLine: string;
+    ankleHeel: string;
+    ankleToe: string;
+    backEasy: string;
+    backRace: string;
+    armGrips: string;
+    crankMark: string;
+    crankStep: string;
+    crankNeed: string;
+    crankPoints: string;
     fitBikeOn: string;
     fitBikeOff: string;
     videoFloat: string;
@@ -171,6 +196,10 @@ export type Dict = {
     overheadFlagArmsShort: string;
     overheadFlagHip: string;
     stackTitle: string;
+    rulesTitle: string;
+    ruleAngle: string;
+    ruleBike: string;
+    ruleBody: string;
     stackCamera: string;
     stackBike: string;
     stackSaddle: string;
@@ -286,6 +315,7 @@ export type Dict = {
     endurance: string;
     race: string;
     mtb: string;
+    gravel: string;
     crank: string;
     saddle: string;
     stem: string;
@@ -428,6 +458,7 @@ export const dict: Record<Locale, Dict> = {
         title: 'Два кадра',
         down: { title: 'Шатун внизу', text: 'Педаль на 6 часов, нога почти прямая. Отсюда колено, спина и рука.' },
         up: { title: 'Шатун вверху', text: 'Та же точка, педаль на 12 часов, стопа на педали. Этот кадр — для бедра.' },
+        marks: 'На нижнем кадре потом два щелчка: центр каретки, затем ось педали. Длина шатуна из кабинета переводит их в миллиметры.',
       },
       next: 'Дальше — разобрать кадр',
     },
@@ -472,7 +503,37 @@ export const dict: Record<Locale, Dict> = {
       videoWorking: 'Считаю кадры на этом устройстве',
       videoLong: 'Длиннее минуты: беру первую минуту.',
       videoMinute: 'Длиннее полуминуты: читаю до минуты, кадры чуть реже.',
-      fitLead: 'Сначала посадка: ролик сбоку и два фото об одном и том же. Вывод общий, ниже. Оверхед после него — другая сводка, угол посадки она не переписывает.',
+      fitLead: 'Оверхед внизу — отдельно. Углы посадки он не переписывает.',
+      sourcePick: 'Ролик или два фото. Хватит одного.',
+      askFit: 'Сначала велосипед. От него зависят слова, не таблица идеальных градусов.',
+      fitNotes: {
+        city: 'Городской. Норма спины от 40°, не от 35°. Колено, рука и бедро не меняются.',
+        endurance: 'Шоссейник. Норма спины обычная: 35–50°. Колено, рука и бедро не меняются.',
+        gravel: 'Гравий. Норма спины от 40°. Колено, рука и бедро не меняются.',
+        race: 'Тот же шоссейник, руль ниже. Норма спины может опускаться до 32°. Остальные углы те же.',
+        mtb: 'Горный. Норма спины может доходить до 58°. Колено, рука и бедро не меняются.',
+      },
+      askHands: 'Где руки на этом кадре?',
+      askPain: 'Что уже болит? Отмеченное гасит совет крутить седло.',
+      handsHoods: 'Дуалки',
+      handsDrops: 'Низ руля',
+      handsTops: 'Верх руля',
+      handsGrips: 'Грипсы',
+      painFoot: 'Стопа',
+      painHands: 'Кисти',
+      painSaddle: 'Седло',
+      painLeg: 'Одна нога короче',
+      saddleHeld: 'Высоту седла по этому кадру не крутим. Причина в стопе, кистях, седле или разнице ног.',
+      ankleLine: 'Голень и стопа держат прямой угол. На шести часах небольшой подъём на носок допустим.',
+      ankleHeel: 'Пятка проваливается. Это не команда опустить седло.',
+      ankleToe: 'Носок висит. Это положение стопы, не тип велосипеда. Высоту седла по этому кадру не советуем.',
+      backEasy: 'Для этого велосипеда более вертикальный корпус обычен.',
+      backRace: 'Для низкого шоссе низкий корпус ожидаем. Вынос всё равно лучше смотреть вживую.',
+      armGrips: 'На грипсах прямая рука грузит кисть иначе, чем на дуалках. Высоту руля смотрим вживую.',
+      crankMark: 'Два щелчка по этому кадру: сначала центр каретки, затем ось педали.',
+      crankStep: 'На картинке седло сдвинулось бы на {mm} мм. Это один шаг, не конечная высота.',
+      crankNeed: 'Миллиметры появятся, когда в велосипеде указан шатун. Потом на нижнем фото два щелчка: центр каретки и ось педали.',
+      crankPoints: 'Шатун {mm} мм уже есть. Не хватает двух щелчков на нижнем фото: сначала центр каретки, затем ось педали.',
       fitBikeOn: 'В совете велосипед «{name}». Шатун, вынос и падение входят во фразу, только если угол уже вне коридора. Градус не меняется.',
       fitBikeOff: 'Велосипед ещё не выбран. Совет идёт по коридору, размеры не участвуют. Выберешь его внизу, у сохранения.',
       videoFloat: 'За оборот углы плавают больше чем на 4°. Посадку лучше смотреть вживую.',
@@ -547,19 +608,23 @@ export const dict: Record<Locale, Dict> = {
       overheadFlagArmsOpen: 'Руки над головой почти прямые. Плечо в этом тесте дотягивается, длина выноса тут ни при чём.',
       overheadFlagArmsShort: 'Рука над головой сгибается. Дотянуться до руля может мешать плечо, не только длина выноса.',
       overheadFlagHip: 'Бёдра в нижней точке почти прямые — присед не дошёл. Вывод по глубине пока слабый.',
-      stackTitle: 'Как складывается разбор',
-      stackCamera: 'Градус берётся с камеры и не переписывается. Тело сдвигает коридор. Велосипед меняет фразу совета, только когда угол уже вышел из коридора.',
-      stackBike: 'Шатун объясняет слишком прямое колено, вынос — руку, падение руля — наклон корпуса. Высоту седла в градус не переводим: её проверяет колено.',
+      stackTitle: 'Итог',
+      rulesTitle: 'Как читать цифры',
+      ruleAngle: 'Число с кадра остаётся как есть.',
+      ruleBike: 'Размер велосипеда меняет совет, только если угол уже не в своей норме.',
+      ruleBody: '«С усилием» и «не могу» сдвигают эту норму. «Легко» и «дотягиваюсь» — нет.',
+      stackCamera: 'Число с кадра остаётся как есть. Размер велосипеда меняет совет, только если угол уже не в своей норме. «С усилием» и «не могу» сдвигают эту норму. «Легко» и «дотягиваюсь» — нет.',
+      stackBike: 'Шатун связан с коленом, вынос — с рукой, перепад руля — с наклоном корпуса. Высоту седла в градус не переводим: её видно по колену.',
       stackSaddle: 'Высота седла {mm} мм записана. В угол она не пересчитывается.',
       stackAgree: '{label}: фото {a}° и ролик {b}° сходятся.',
       stackSplit: '{label}: фото {a}°, ролик {b}°. Разница больше 8°. Цифры так не складываются — лучше переснять кадр, где человек виден хуже.',
       stackPhoto: 'Фото',
       stackFilm: 'Ролик',
-      stackNamed: 'Фразы считаются с «{name}». Размеры входят, только если угол уже вне коридора.',
-      stackOpen: 'Велосипед не выбран. Размеры в этих фразах не участвуют.',
+      stackNamed: 'Считаем по «{name}».',
+      stackOpen: 'Велосипед не выбран, размеры в совете не участвуют.',
       saveScope: 'Четыре угла — в выбранный велосипед. Оверхед и запас тела — в карточку человека: они одни на все велосипеды. Пустой блок старую карточку не стирает.',
       factorTitle: 'Что вошло в расчёт',
-      factorLead: 'Градус с камеры не меняется. Размер велосипеда меняет фразу, только если угол уже вне коридора. «С усилием» и «не могу» двигают сам коридор. «Легко» и «дотягиваюсь» его не трогают.',
+      factorLead: 'Число с кадра остаётся как есть. Размер велосипеда меняет совет, только если угол уже не в своей норме. «С усилием» и «не могу» сдвигают эту норму. «Легко» и «дотягиваюсь» — нет.',
       factorBike: 'Велосипед',
       factorBody: 'Запас тела',
       factorCrank: 'Шатун',
@@ -567,15 +632,15 @@ export const dict: Record<Locale, Dict> = {
       factorDrop: 'Падение руля',
       factorSaddle: 'Седло',
       factorMissing: '{label} не записан. В расчёт не входит.',
-      factorQuiet: '{label} {mm} мм. {angle} {value}° в коридоре {min}–{max}°. Размер молчит.',
-      factorQuietEmpty: '{label} {mm} мм записан. Угла ещё нет, размер молчит.',
-      factorSpeaks: '{label} {mm} мм. {angle} {value}° вне коридора {min}–{max}°. Размер входит во фразу. Градус остаётся {value}°.',
+      factorQuiet: '{label} {mm} мм. {angle} {value}° в норме {min}–{max}°. Размер на совет не влияет.',
+      factorQuietEmpty: '{label} {mm} мм записан. Угла ещё нет, размер на совет не влияет.',
+      factorSpeaks: '{label} {mm} мм. {angle} {value}° вне нормы {min}–{max}°. Размер входит в совет. Число остаётся {value}°.',
       factorSaddleLine: 'Седло {mm} мм. В градус не переводится. Высоту проверяет колено.',
       factorSaddleMissing: 'Седло не записано. В градус оно всё равно не переводится.',
-      factorHold: '{label}: {grade}. Коридор «{angle}» остаётся {min}–{max}°.',
-      factorShifts: '{label}: {grade}. Коридор «{angle}» становится {min}–{max}° вместо {baseMin}–{baseMax}°.',
-      factorBodySpeaks: '{label}: {grade}. Коридор «{angle}» {min}–{max}°, угол {value}° в него упирается. Фраза про запас тела. Градус остаётся {value}°.',
-      factorBodyMissing: '{label} не отмечен. Коридор «{angle}» обычный: {min}–{max}°.',
+      factorHold: '{label}: {grade}. Норма «{angle}» остаётся {min}–{max}°.',
+      factorShifts: '{label}: {grade}. Норма «{angle}» становится {min}–{max}° вместо {baseMin}–{baseMax}°.',
+      factorBodySpeaks: '{label}: {grade}. Норма «{angle}» {min}–{max}°, угол {value}° в неё упирается. Совет про запас тела. Число остаётся {value}°.',
+      factorBodyMissing: '{label} не отмечен. Норма «{angle}» обычная: {min}–{max}°.',
       gradeEasy: 'Легко',
       gradeReach: 'Дотягиваюсь',
       gradeEffort: 'С усилием',
@@ -684,9 +749,10 @@ export const dict: Record<Locale, Dict> = {
       bikeName: 'Название',
       fit: 'Посадка',
       city: 'Городская',
-      endurance: 'Универсальная',
-      race: 'Гоночная',
+      endurance: 'Шоссе',
+      race: 'Шоссе низко',
       mtb: 'Горная',
+      gravel: 'Гравий',
       crank: 'Шатун, мм',
       saddle: 'Высота седла от каретки, мм',
       stem: 'Вынос, мм',
@@ -864,6 +930,7 @@ export const dict: Record<Locale, Dict> = {
         title: 'Two frames',
         down: { title: 'Crank down', text: 'Pedal at 6 o’clock, leg almost straight. This shows knee, back and arm.' },
         up: { title: 'Crank up', text: 'Same spot, pedal at 12 o’clock, foot still on the pedal. This frame is for the hip.' },
+        marks: 'On the lower frame, two clicks come next: the bottom-bracket centre, then the pedal axle. The crank length from the account turns them into millimetres.',
       },
       next: 'Next — read the photo',
     },
@@ -908,7 +975,37 @@ export const dict: Record<Locale, Dict> = {
       videoWorking: 'Reading frames on this device',
       videoLong: 'Longer than a minute: the first minute is read.',
       videoMinute: 'Longer than half a minute: the clip is read up to a minute, with frames a little further apart.',
-      fitLead: 'The position comes first: a side clip and two photos of the same thing. The conclusion sits below. The overhead squat after that is a separate summary. It does not rewrite the position angles.',
+      fitLead: 'The overhead squat at the bottom is separate. It does not rewrite the position angles.',
+      sourcePick: 'A clip or two photos. One is enough.',
+      askFit: 'The bike comes first. It changes the words, not a table of ideal degrees.',
+      fitNotes: {
+        city: 'City bike. The back range starts at 40°, not 35°. Knee, arm and hip stay put.',
+        endurance: 'Road bike. The back range stays the usual 35–50°. Knee, arm and hip stay put.',
+        gravel: 'Gravel. The back range starts at 40°. Knee, arm and hip stay put.',
+        race: 'The same road bike, with a lower bar. The back range can go down to 32°. The other angles stay put.',
+        mtb: 'Mountain. The back range can reach 58°. Knee, arm and hip stay put.',
+      },
+      askHands: 'Where are the hands in this frame?',
+      askPain: 'What already hurts? A mark here holds the saddle-height advice.',
+      handsHoods: 'Hoods',
+      handsDrops: 'Drops',
+      handsTops: 'Tops',
+      handsGrips: 'Grips',
+      painFoot: 'Foot',
+      painHands: 'Hands',
+      painSaddle: 'Saddle',
+      painLeg: 'One leg feels short',
+      saddleHeld: 'This frame does not say to move the saddle. The reason is the foot, the hands, the saddle, or a leg-length difference.',
+      ankleLine: 'Shin and foot hold a right angle. A small rise onto the toe at six o’clock is fine.',
+      ankleHeel: 'The heel drops. That is not an order to lower the saddle.',
+      ankleToe: 'The toe hangs. That is the foot, not the bike type. This frame does not advise a saddle change.',
+      backEasy: 'A more upright torso is ordinary on this bike.',
+      backRace: 'A low torso is expected on a low road bike. Stem length is still a visit.',
+      armGrips: 'On grips a straight arm loads the wrist differently than on the hoods. Bar height is a visit.',
+      crankMark: 'Two clicks on this frame: the bottom-bracket centre first, then the pedal axle.',
+      crankStep: 'In the picture the saddle would move {mm} mm. That is one step, not the final height.',
+      crankNeed: 'Millimetres appear once the bike has a crank length. Then two clicks on the lower photo: the bottom-bracket centre and the pedal axle.',
+      crankPoints: 'Crank length {mm} mm is already saved. Two clicks are still missing on the lower photo: the bottom-bracket centre, then the pedal axle.',
       fitBikeOn: 'The advice uses “{name}”. Crank, stem and drop enter the sentence only when an angle is already outside the target. The degree does not change.',
       fitBikeOff: 'No bike is chosen yet. The advice follows the target, and the sizes stay out. Choose the bike below, where the reading is saved.',
       videoFloat: 'The angles drift by more than 4° during a stroke. Worth checking the fit in person.',
@@ -983,19 +1080,23 @@ export const dict: Record<Locale, Dict> = {
       overheadFlagArmsOpen: 'The arms overhead are nearly straight. The shoulder reaches in this test. Stem length is not the point here.',
       overheadFlagArmsShort: 'An arm bends overhead. Reaching the bar may be the shoulder, not only stem length.',
       overheadFlagHip: 'The hips stay nearly straight at the bottom — the squat did not get there. The depth reading is still weak.',
-      stackTitle: 'How the reading stacks',
-      stackCamera: 'The degree comes from the camera and is not rewritten. The body shifts the target. The bike changes the advice sentence only when an angle is already outside that target.',
-      stackBike: 'Crank length explains a too-straight knee, stem length the arm, bar drop the torso lean. Saddle height is not turned into a degree: the knee angle checks it.',
+      stackTitle: 'Result',
+      rulesTitle: 'How to read the numbers',
+      ruleAngle: 'The number from the frame stays as it is.',
+      ruleBike: 'Bike size changes the advice only when an angle is already outside its range.',
+      ruleBody: '“With effort” and “I can’t” move that range. “Easy” and “I can reach” do not.',
+      stackCamera: 'The number from the frame stays as it is. Bike size changes the advice only when an angle is already outside its range. “With effort” and “I can’t” move that range. “Easy” and “I can reach” do not.',
+      stackBike: 'Crank length goes with the knee, stem length with the arm, bar drop with how far the torso leans. Saddle height is not turned into a degree: the knee shows it.',
       stackSaddle: 'Saddle height {mm} mm is saved. It is not converted into an angle.',
       stackAgree: '{label}: photo {a}° and clip {b}° agree.',
       stackSplit: '{label}: photo {a}°, clip {b}°. The gap is over 8°. The numbers do not stack — reshoot the frame where the person is harder to see.',
       stackPhoto: 'Photo',
       stackFilm: 'Clip',
-      stackNamed: 'The sentences use “{name}”. Sizes enter only when an angle is already outside the target.',
-      stackOpen: 'No bike is chosen. Sizes do not enter these sentences.',
+      stackNamed: 'Reading “{name}”.',
+      stackOpen: 'No bike is chosen, so sizes stay out of the advice.',
       saveScope: 'The four angles go on the chosen bike. The overhead squat and the body grades go on the person card: one card for every bike. An empty block does not erase the card already saved.',
       factorTitle: 'What entered the calculation',
-      factorLead: 'The degree from the camera does not change. A bike size changes the sentence only when an angle is already outside the target. “With effort” and “I can’t” move the target. “Easy” and “I can reach” leave it alone.',
+      factorLead: 'The number from the frame stays as it is. Bike size changes the advice only when an angle is already outside its range. “With effort” and “I can’t” move that range. “Easy” and “I can reach” do not.',
       factorBike: 'Bike',
       factorBody: 'What the body can do',
       factorCrank: 'Crank',
@@ -1003,15 +1104,15 @@ export const dict: Record<Locale, Dict> = {
       factorDrop: 'Bar drop',
       factorSaddle: 'Saddle',
       factorMissing: '{label} is not saved. It stays out of the calculation.',
-      factorQuiet: '{label} {mm} mm. {angle} {value}° is inside {min}–{max}°. The size stays quiet.',
-      factorQuietEmpty: '{label} {mm} mm is saved. There is no angle yet, so the size stays quiet.',
-      factorSpeaks: '{label} {mm} mm. {angle} {value}° is outside {min}–{max}°. The size enters the sentence. The degree stays {value}°.',
+      factorQuiet: '{label} {mm} mm. {angle} {value}° is inside the range {min}–{max}°. Size does not change the advice.',
+      factorQuietEmpty: '{label} {mm} mm is saved. There is no angle yet, so size does not change the advice.',
+      factorSpeaks: '{label} {mm} mm. {angle} {value}° is outside the range {min}–{max}°. Size enters the advice. The number stays {value}°.',
       factorSaddleLine: 'Saddle {mm} mm. It is not turned into a degree. Knee angle checks the height.',
       factorSaddleMissing: 'Saddle height is not saved. It would not become a degree anyway.',
-      factorHold: '{label}: {grade}. The “{angle}” target stays {min}–{max}°.',
-      factorShifts: '{label}: {grade}. The “{angle}” target becomes {min}–{max}° instead of {baseMin}–{baseMax}°.',
-      factorBodySpeaks: '{label}: {grade}. The “{angle}” target is {min}–{max}°, and {value}° is against it. The sentence is about the body. The degree stays {value}°.',
-      factorBodyMissing: '{label} is not marked. The “{angle}” target stays the usual {min}–{max}°.',
+      factorHold: '{label}: {grade}. The “{angle}” range stays {min}–{max}°.',
+      factorShifts: '{label}: {grade}. The “{angle}” range becomes {min}–{max}° instead of {baseMin}–{baseMax}°.',
+      factorBodySpeaks: '{label}: {grade}. The “{angle}” range is {min}–{max}°, and {value}° is against it. The advice is about the body. The number stays {value}°.',
+      factorBodyMissing: '{label} is not marked. The “{angle}” range stays the usual {min}–{max}°.',
       gradeEasy: 'Easy',
       gradeReach: 'I can reach',
       gradeEffort: 'With effort',
@@ -1120,9 +1221,10 @@ export const dict: Record<Locale, Dict> = {
       bikeName: 'Name',
       fit: 'Position',
       city: 'City',
-      endurance: 'All-round',
-      race: 'Race',
+      endurance: 'Road',
+      race: 'Road, low',
       mtb: 'Mountain',
+      gravel: 'Gravel',
       crank: 'Crank, mm',
       saddle: 'Saddle height from the bottom bracket, mm',
       stem: 'Stem, mm',

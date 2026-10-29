@@ -1,7 +1,9 @@
 import { dict, type Locale } from '../i18n';
 import { band, type AngleKey } from '../lib/advice';
 import type { SavedBike } from '../lib/bike-sync';
-import { corridorFor, explainFactors, leadingNote, splitAngles, type BodyLayer, type NoteCode } from '../lib/layers';
+import type { FitId } from '../lib/fits';
+import type { AnkleStance } from '../lib/foot';
+import { corridorFor, explainFactors, leadingNote, splitAngles, angleVoice, type BodyLayer, type NoteCode } from '../lib/layers';
 import type { AngleReading } from '../lib/reading';
 import Factors from './Factors';
 
@@ -35,12 +37,26 @@ export default function Picture({
   film,
   body,
   bike,
+  fit,
+  hands,
+  holdKnee,
+  ankle,
+  saddleStep,
+  ruler = false,
+  spread,
 }: {
   locale: Locale;
   photo: AngleReading;
   film: AngleReading | null;
   body: BodyLayer;
   bike: SavedBike | null;
+  fit: FitId | null;
+  hands: 'hoods' | 'drops' | 'tops' | 'grips' | null;
+  holdKnee: boolean;
+  ankle: AnkleStance | null;
+  saddleStep: number | null;
+  ruler?: boolean;
+  spread: { knee: number | null; hip: number | null } | null;
 }) {
   const copy = dict[locale].analyze;
   const angles = dict[locale].angles;
@@ -51,27 +67,42 @@ export default function Picture({
   if (!hasNumber && !bodyOn && !bike) return null;
   const splits = film ? splitAngles(photo, film) : [];
   const bikeBits = bits(bike);
+  const ankleLine = ankle === 'line' ? copy.ankleLine : ankle === 'heel' ? copy.ankleHeel : ankle === 'toe' ? copy.ankleToe : null;
+  const crankLine = ruler && saddleStep !== null
+    ? copy.crankStep.replace('{mm}', String(saddleStep))
+    : ruler && hasNumber
+      ? (bike?.crank_mm != null
+        ? copy.crankPoints.replace('{mm}', String(bike.crank_mm))
+        : copy.crankNeed)
+      : null;
 
   return (
     <section className="picture">
-      <h2>{copy.stackTitle}</h2>
-      <p>{copy.stackCamera}</p>
-      <p>{copy.stackBike}</p>
-      {bike ? <p>{copy.stackNamed.replace('{name}', bike.name)}</p> : <p>{copy.stackOpen}</p>}
-      {bike?.saddle_mm != null ? <p>{copy.stackSaddle.replace('{mm}', String(bike.saddle_mm))}</p> : null}
-      <Factors locale={locale} scope="all" rows={explainFactors(source, bikeBits, body)} />
+      {hasNumber || ankleLine || crankLine ? (
+        <div className="picture-result">
+          <h2>{copy.stackTitle}</h2>
       {KEYS.map((key) => {
         const photoValue = photo[key];
         const filmValue = film?.[key] ?? null;
         const value = filmValue ?? photoValue;
         if (value === null) return null;
         const split = splits.includes(key);
-        const corridor = corridorFor(key, body);
+        const shaky = (key === 'knee' && (spread?.knee ?? 0) > 4) || (key === 'hip' && (spread?.hip ?? 0) > 4);
+        const corridor = corridorFor(key, body, fit);
         const zone = band(value, corridor.min, corridor.max);
         const lead = leadingNote(key, { ...source, [key]: value }, bikeBits, body);
-        const sentence = lead
-          ? copy.notes[NOTE_KEY[lead]].replace('{mm}', fill(lead, bike))
-          : advice[key][zone];
+        const voice = angleVoice(key, zone, fit, hands, holdKnee);
+        const sentence = voice === 'held'
+          ? copy.saddleHeld
+          : voice === 'back-easy'
+            ? copy.backEasy
+            : voice === 'back-race'
+              ? copy.backRace
+              : voice === 'arm-grips'
+                ? copy.armGrips
+                : lead
+                  ? copy.notes[NOTE_KEY[lead]].replace('{mm}', fill(lead, bike))
+                  : advice[key][zone];
         let line = `${filmValue !== null ? copy.stackFilm : copy.stackPhoto} ${Math.round(value)}°`;
         if (photoValue !== null && filmValue !== null) {
           const template = split ? copy.stackSplit : copy.stackAgree;
@@ -85,11 +116,27 @@ export default function Picture({
             <strong>{angles[key].label}</strong>
             <span>
               {line}
-              {split ? null : <i>{sentence}</i>}
+              {split || shaky ? (key === 'knee' && holdKnee ? <i>{sentence}</i> : null) : <i>{sentence}</i>}
             </span>
           </article>
         );
       })}
+          {ankleLine ? <p>{ankleLine}</p> : null}
+          {crankLine ? <p>{crankLine}</p> : null}
+        </div>
+      ) : null}
+      <aside className="picture-context">
+        <h2>{copy.rulesTitle}</h2>
+        <ul>
+          <li>{copy.ruleAngle}</li>
+          <li>{copy.ruleBike}</li>
+          <li>{copy.ruleBody}</li>
+        </ul>
+        <p>{copy.stackBike}</p>
+        {bike ? <p>{copy.stackNamed.replace('{name}', bike.name)}</p> : <p>{copy.stackOpen}</p>}
+        {bike?.saddle_mm != null ? <p>{copy.stackSaddle.replace('{mm}', String(bike.saddle_mm))}</p> : null}
+        <Factors locale={locale} scope="all" rows={explainFactors(source, bikeBits, body, fit)} />
+      </aside>
     </section>
   );
 }

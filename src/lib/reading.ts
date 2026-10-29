@@ -1,4 +1,5 @@
 import { angleAt, meanVisibility, seen, torsoInclinationDeg, type Point } from './geometry';
+import { ankleStance, type AnkleStance } from './foot';
 
 export type { Point };
 
@@ -76,4 +77,16 @@ export function readFrame(landmarks: Point[], frame: Frame): AngleReading {
     arm: elbow && wrist && seen([shoulder, elbow, wrist]) ? angleAt(shoulder, elbow, wrist) : null,
     hip: null,
   };
+}
+
+/** Пятка не нужна: угол строится по колену, лодыжке и носку видимой стороны. */
+export function footStance(landmarks: Point[]): AnkleStance | null {
+  const side = pickSide(landmarks);
+  if (!side) return null;
+  const index = side === 'right' ? RIGHT : LEFT;
+  const knee = landmarks[index.knee];
+  const ankle = landmarks[index.ankle];
+  const toe = landmarks[side === 'right' ? 32 : 31];
+  if (!knee || !ankle || !toe) return null;
+  return ankleStance(knee, ankle, toe);
 }

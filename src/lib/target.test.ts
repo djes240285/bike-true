@@ -16,16 +16,22 @@ const rider: Joints = {
 };
 
 describe('target', () => {
-  test('угол внутри коридора не трогаем, снаружи ведём к середине', () => {
+  test('угол внутри коридора не трогаем, снаружи сдвигаем на 3° к границе', () => {
     expect(targetFor('knee', 146)).toBe(146);
-    expect(targetFor('knee', 160)).toBe(145);
-    expect(targetFor('arm', 174)).toBe(157.5);
+    expect(targetFor('knee', 151)).toBe(150);
+    expect(targetFor('knee', 160)).toBe(157);
+    expect(targetFor('arm', 174)).toBe(171);
+    expect(targetFor('back', 33)).toBe(35);
+    expect(targetFor('back', 33, { back: { min: 32, max: 50 } })).toBe(33);
   });
 
   test('нижний кадр: углы уходят к ориентиру, длины звеньев сохраняются', () => {
     const ideal = idealBottom(rider);
-    expect(angleAt(ideal.hip, ideal.knee, ideal.ankle)).toBeCloseTo(145, 0);
-    expect(angleAt(ideal.shoulder, ideal.elbow, ideal.wrist)).toBeCloseTo(157.5, 0);
+    const kneeNow = angleAt(rider.hip, rider.knee, rider.ankle) ?? 0;
+    const armNow = angleAt(rider.shoulder, rider.elbow, rider.wrist) ?? 0;
+    expect(angleAt(ideal.hip, ideal.knee, ideal.ankle)).toBeCloseTo(targetFor('knee', kneeNow), 0);
+    expect(angleAt(ideal.shoulder, ideal.elbow, ideal.wrist)).toBeCloseTo(targetFor('arm', armNow), 0);
+    expect(Math.abs(targetFor('knee', kneeNow) - kneeNow)).toBeLessThanOrEqual(3);
     expect(length(ideal.hip, ideal.knee)).toBeCloseTo(length(rider.hip, rider.knee), 3);
     expect(length(ideal.knee, ideal.ankle)).toBeCloseTo(length(rider.knee, rider.ankle), 3);
     expect(length(ideal.shoulder, ideal.hip)).toBeCloseTo(length(rider.shoulder, rider.hip), 3);
@@ -51,7 +57,8 @@ describe('target', () => {
   });
 
   test('если всё в ориентире, силуэт не двигается', () => {
-    const ideal = idealBottom(idealBottom(rider));
-    expect(moved(idealBottom(rider), ideal)).toBe(false);
+    let pose = rider;
+    for (let step = 0; step < 8; step += 1) pose = idealBottom(pose);
+    expect(moved(pose, idealBottom(pose))).toBe(false);
   });
 });

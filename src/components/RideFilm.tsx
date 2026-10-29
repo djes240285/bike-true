@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { dict, type Locale } from '../i18n';
 import { band, CORRIDORS, type AngleKey } from '../lib/advice';
 import type { SavedBike } from '../lib/bike-sync';
+import type { FitId } from '../lib/fits';
 import { corridorFor, explainFactors, layerNotes, leadingNote, type BodyLayer, type Grade, type NoteCode } from '../lib/layers';
 import Factors from './Factors';
-import { crowd, LEFT, pickSide, readFrame, RIGHT, toPixels, type AngleReading, type Point } from '../lib/reading';
+import { crowd, footStance, LEFT, pickSide, readFrame, RIGHT, toPixels, type AngleReading, type Point } from '../lib/reading';
+import type { AnkleStance } from '../lib/foot';
 import { readStroke, sampleSpan, sampleTimes, strokeAngles, type StrokeReading, type StrokeSample } from '../lib/stroke';
 import { frameAngles, poseAt, smoothPoses } from '../lib/track';
 
@@ -164,14 +166,16 @@ export default function RideFilm({
   onReading,
   onLayer,
   bike,
+  fit = null,
   generation = 0,
 }: {
   locale: Locale;
   ready: boolean;
   detect: Detect | null;
-  onReading: (reading: AngleReading, hadTop: boolean) => void;
+  onReading: (reading: AngleReading, hadTop: boolean, extra: { kneeSpread: number | null; hipSpread: number | null; ankle: AnkleStance | null }) => void;
   onLayer?: (body: BodyLayer) => void;
   bike: SavedBike | null;
+  fit?: FitId | null;
   generation?: number;
 }) {
   const copy = dict[locale].analyze;
@@ -315,7 +319,16 @@ export default function RideFilm({
       setUrl(nextUrl);
       setStatus('done');
       const reading = strokeAngles(next);
-      onReading(reading, reading.hip !== null);
+      let ankle: AnkleStance | null = null;
+      let bestKnee = -1;
+      for (const sample of found) {
+        if (sample.knee === null || sample.knee < bestKnee || !sample.points) continue;
+        const stance = footStance(toPixels(sample.points, width, height));
+        if (!stance) continue;
+        bestKnee = sample.knee;
+        ankle = stance;
+      }
+      onReading(reading, reading.hip !== null, { kneeSpread: next.kneeSpread, hipSpread: next.hipSpread, ankle });
     } catch {
       setStatus('retake');
     }
@@ -405,7 +418,7 @@ export default function RideFilm({
       {reading ? (
         <p className="note">{bike ? copy.fitBikeOn.replace('{name}', bike.name) : copy.fitBikeOff}</p>
       ) : null}
-      {reading ? <Factors locale={locale} scope="bike" rows={explainFactors(reading, bits, body)} /> : null}
+      {reading ? <Factors locale={locale} scope="bike" rows={explainFactors(reading, bits, body, fit)} /> : null}
 
       {reading && shown.length > 0 ? (
         <div className="angles">

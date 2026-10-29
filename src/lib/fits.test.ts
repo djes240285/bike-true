@@ -7,13 +7,14 @@ describe('fits', () => {
     expect(isFit('endurance')).toBe(true);
     expect(isFit('race')).toBe(true);
     expect(isFit('mtb')).toBe(true);
+    expect(isFit('gravel')).toBe(true);
     expect(isRider('child')).toBe(true);
     expect(isRider('teen')).toBe(true);
     expect(isRider('adult')).toBe(true);
   });
 
   test('чужое слово не проходит', () => {
-    expect(isFit('gravel')).toBe(false);
+    expect(isFit('track')).toBe(false);
     expect(isFit('')).toBe(false);
     expect(isRider('woman')).toBe(false);
   });

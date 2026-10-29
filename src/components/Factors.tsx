@@ -35,11 +35,11 @@ function sentence(copy: typeof dict.ru.analyze, angles: typeof dict.ru.angles, r
   if (row.kind === 'bike') {
     if (row.state === 'missing') return fill(copy.factorMissing, { label });
     if (row.value === null) return fill(copy.factorQuietEmpty, { label, mm });
-    const values = { label, mm, angle, value, min: String(row.base.min), max: String(row.base.max) };
+    const values = { label, mm, angle, value, min: String(row.corridor.min), max: String(row.corridor.max) };
     return fill(row.state === 'speaks' ? copy.factorSpeaks : copy.factorQuiet, values);
   }
   if (row.state === 'missing') {
-    return fill(copy.factorBodyMissing, { label, angle, min: String(row.base.min), max: String(row.base.max) });
+    return fill(copy.factorBodyMissing, { label, angle, min: String(row.corridor.min), max: String(row.corridor.max) });
   }
   const grade = row.grade ? gradeLabel(copy, row.grade) : '';
   if (row.state === 'hold') {
@@ -83,12 +83,7 @@ export default function Factors({
   const body = shown.filter((row) => row.kind === 'body');
   return (
     <div className="factors">
-      {scope === 'all' ? (
-        <>
-          <h3>{copy.factorTitle}</h3>
-          <p>{copy.factorLead}</p>
-        </>
-      ) : null}
+      {scope === 'all' ? <h3>{copy.factorTitle}</h3> : null}
       {bike.length > 0 ? (
         <>
           {scope === 'all' ? <h4>{copy.factorBike}</h4> : null}
