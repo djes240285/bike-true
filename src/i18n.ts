@@ -123,6 +123,8 @@ export type Dict = {
     painSaddle: string;
     painLeg: string;
     saddleHeld: string;
+    footTitle: string;
+    saddleTitle: string;
     ankleLine: string;
     ankleHeel: string;
     ankleToe: string;
@@ -568,6 +570,8 @@ export const dict: Record<Locale, Dict> = {
       painSaddle: 'Седло',
       painLeg: 'Одна нога короче',
       saddleHeld: 'Высоту седла по этому кадру не крутим. Причина в стопе, кистях, седле или разнице ног.',
+      footTitle: 'Стопа',
+      saddleTitle: 'Седло',
       ankleLine: 'Голень и стопа держат прямой угол. На шести часах небольшой подъём на носок допустим.',
       ankleHeel: 'Пятка проваливается. Это не команда опустить седло.',
       ankleToe: 'Стопа вытянута носком вниз. Это про ногу на педали, не про вид велосипеда. Седло по этому кадру не поднимаем и не опускаем.',
@@ -1077,6 +1081,8 @@ export const dict: Record<Locale, Dict> = {
       painSaddle: 'Saddle',
       painLeg: 'One leg feels short',
       saddleHeld: 'This frame does not say to move the saddle. The reason is the foot, the hands, the saddle, or a leg-length difference.',
+      footTitle: 'Foot',
+      saddleTitle: 'Saddle',
       ankleLine: 'Shin and foot hold a right angle. A small rise onto the toe at six o’clock is fine.',
       ankleHeel: 'The heel drops. That is not an order to lower the saddle.',
       ankleToe: 'The foot is pointed, toe down. That is the foot on the pedal, not the bike type. This frame does not say to raise or lower the saddle.',

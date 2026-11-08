@@ -142,6 +142,7 @@ export default function PoseStage({
   const stageRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<{ distance: number; zoom: number } | null>(null);
   const dragged = useRef(false);
@@ -220,7 +221,10 @@ export default function PoseStage({
     if (!previous) return;
     const dx = event.clientX - previous.x;
     const dy = event.clientY - previous.y;
-    if (Math.hypot(dx, dy) > 8) dragged.current = true;
+    if (Math.hypot(dx, dy) > 8) {
+      dragged.current = true;
+      if (view.current.zoom > 1) setDragging(true);
+    }
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     if (pointers.current.size >= 2 && pinch.current) {
       const [a, b] = [...pointers.current.values()];
@@ -236,6 +240,7 @@ export default function PoseStage({
     pointers.current.delete(event.pointerId);
     if (pointers.current.size < 2) pinch.current = null;
     if (!pinching && !dragged.current) place(event);
+    if (pointers.current.size === 0) setDragging(false);
   }
 
   useEffect(() => {
@@ -290,7 +295,7 @@ export default function PoseStage({
       <div
         className="stage"
         ref={stageRef}
-        style={{ touchAction: zoom > 1 ? 'none' : 'pan-y', cursor: zoom > 1 ? 'grab' : undefined }}
+        style={{ touchAction: zoom > 1 ? 'none' : 'pan-y', cursor: dragging ? 'grabbing' : onMark ? 'crosshair' : zoom > 1 ? 'grab' : undefined }}
         onPointerDown={pointerDown}
         onPointerMove={pointerMove}
         onPointerUp={pointerUp}
@@ -300,7 +305,7 @@ export default function PoseStage({
           ref={canvasRef}
           style={{
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-            cursor: zoom > 1 ? 'grab' : onMark ? 'crosshair' : undefined,
+            cursor: dragging ? 'grabbing' : onMark ? 'crosshair' : zoom > 1 ? 'grab' : undefined,
           }}
         />
         <div className="zoom-bar">

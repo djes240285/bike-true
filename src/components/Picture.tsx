@@ -176,8 +176,18 @@ export default function Picture({
           </article>
         );
       })}
-          {ankleLine ? <p>{ankleLine}</p> : null}
-          {crankLine ? <p>{crankLine}</p> : null}
+          {ankleLine ? (
+            <article className="picture-row">
+              <strong>{copy.footTitle}</strong>
+              <span><i>{ankleLine}</i></span>
+            </article>
+          ) : null}
+          {crankLine ? (
+            <article className="picture-row">
+              <strong>{copy.saddleTitle}</strong>
+              <span><i>{crankLine}</i></span>
+            </article>
+          ) : null}
         </div>
       ) : null}
       <details className="audit">
