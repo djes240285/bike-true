@@ -10,7 +10,7 @@ import { pathFor } from '../lib/paths';
 import { crowd, footStance, readFrame, toPixels, type AngleReading, type Frame, type Point } from '../lib/reading';
 import { crankScale, shiftMm, type AnkleStance } from '../lib/foot';
 import type { FitId } from '../lib/fits';
-import { idealBottom, idealTop, jointsOf, moved } from '../lib/target';
+import { idealBottom, idealTop, jointsOf, moved, wishJoints, type BackWish } from '../lib/target';
 import PoseStage, { type Scene } from './PoseStage';
 import RideFilm from './RideFilm';
 import Overhead from './Overhead';
@@ -87,6 +87,7 @@ export default function Analyzer({ locale }: { locale: Locale }) {
   const [personOverhead, setPersonOverhead] = useState<PersonOverhead | null>(null);
   const [fitChoice, setFitChoice] = useState<FitId | null>(null);
   const [hands, setHands] = useState<'hoods' | 'drops' | 'tops' | 'grips' | null>(null);
+  const [backWish, setBackWish] = useState<BackWish | null>(null);
   const [pains, setPains] = useState({ foot: false, hands: false, saddle: false, leg: false });
   const [spread, setSpread] = useState<{ knee: number | null; hip: number | null } | null>(null);
   const [photoAnkle, setPhotoAnkle] = useState<AnkleStance | null>(null);
@@ -225,7 +226,8 @@ export default function Analyzer({ locale }: { locale: Locale }) {
     }
     const bands = poseBands(layerBody, fitChoice);
     const ideal = frame === 'bottom' ? idealBottom(current, bands) : idealTop(current, bands);
-    setScene({ image, current, ideal, changed: moved(current, ideal, image.width / 200) });
+    const wish = frame === 'bottom' && backWish ? wishJoints(current, backWish, corridorFor('back', layerBody, fitChoice)) : null;
+    setScene({ image, current, ideal, changed: moved(current, ideal, image.width / 200), wish });
     setReading((value) => ({ ...value, ...stripNulls(next) }));
     if (frame === 'bottom') setPhotoAnkle(footStance(pixels));
     if (frame === 'top') setHadTop(true);
@@ -244,14 +246,15 @@ export default function Analyzer({ locale }: { locale: Locale }) {
     setBottomScene((scene) => {
       if (!scene) return scene;
       const ideal = idealBottom(scene.current, bands);
-      return { ...scene, ideal, changed: moved(scene.current, ideal, scene.image.width / 200) };
+      const wish = backWish ? wishJoints(scene.current, backWish, corridorFor('back', layerBody, fitChoice)) : null;
+      return { ...scene, ideal, wish, changed: moved(scene.current, ideal, scene.image.width / 200) };
     });
     setTopScene((scene) => {
       if (!scene) return scene;
       const ideal = idealTop(scene.current, bands);
       return { ...scene, ideal, changed: moved(scene.current, ideal, scene.image.width / 200) };
     });
-  }, [layerBody, fitChoice]);
+  }, [layerBody, fitChoice, backWish]);
 
   function reset() {
     pass.current += 1;
@@ -261,6 +264,7 @@ export default function Analyzer({ locale }: { locale: Locale }) {
     setPhotoAnkle(null);
     setFilmAnkle(null);
     setMarks([]);
+    setBackWish(null);
     setPersonOverhead(null);
     setHadTop(false);
     setBottom('empty');
@@ -467,6 +471,9 @@ export default function Analyzer({ locale }: { locale: Locale }) {
         ruler={photosOn}
         spread={spread}
         who={sitter.who === 'other' ? [sitter.other.name.trim(), sitter.other.height ? `${sitter.other.height} ${locale === 'en' ? 'cm' : 'см'}` : ''].filter(Boolean).join(', ') : ''}
+        wish={backWish}
+        onWish={setBackWish}
+        marks={marks.length}
       />
       <Overhead
         locale={locale}

@@ -89,6 +89,9 @@ export type Dict = {
     ghostTarget: string;
     ghostLegend: string;
     ghostAllIn: string;
+    zoomIn: string;
+    zoomOut: string;
+    zoomReset: string;
     saveImage: string;
     saveVideo: string;
     recording: string;
@@ -127,9 +130,21 @@ export type Dict = {
     backRace: string;
     armGrips: string;
     backTops: string;
+    backEnds: string;
+    wishLow: string;
+    wishHigh: string;
+    wishLowLine: string;
+    wishLowStep: string;
+    wishHighLine: string;
+    wishHighStep: string;
+    wishLowTops: string;
+    wishBlue: string;
     armTops: string;
     crankMark: string;
+    crankNext: string;
+    crankDone: string;
     crankStep: string;
+    crankStill: string;
     crankNeed: string;
     crankPoints: string;
     fitBikeOn: string;
@@ -480,7 +495,7 @@ export const dict: Record<Locale, Dict> = {
         title: 'Два кадра',
         down: { title: 'Шатун внизу', text: 'Педаль на 6 часов, нога почти прямая. Отсюда колено, спина и рука.' },
         up: { title: 'Шатун вверху', text: 'Та же точка, педаль на 12 часов, стопа на педали. Этот кадр — для бедра.' },
-        marks: 'На нижнем кадре потом два щелчка: центр каретки, затем ось педали. Длина шатуна из кабинета переводит их в миллиметры.',
+        marks: 'На нижнем фото две жёлтые точки ставишь ты: сначала центр каретки, затем ось педали. Это линейка. Оранжевые точки на теле сайт ставит сам.',
       },
       next: 'Дальше — разобрать кадр',
     },
@@ -513,7 +528,10 @@ export const dict: Record<Locale, Dict> = {
       ghostTarget: 'Ориентир',
       ghostLegend: 'Оранжевый — как ты сидишь сейчас. Белый пунктир — куда тянуться.',
       ghostAllIn: 'Все углы в ориентире — двигать нечего.',
-      saveImage: 'Сохранить картинку',
+      zoomIn: 'Крупнее',
+      zoomOut: 'Мельче',
+      zoomReset: 'Обычный размер',
+      saveImage: 'Скачать фото с линиями',
       saveVideo: 'Сохранить видео',
       recording: 'Записываю…',
       photos: 'Два фото той же посадки',
@@ -552,16 +570,28 @@ export const dict: Record<Locale, Dict> = {
       saddleHeld: 'Высоту седла по этому кадру не крутим. Причина в стопе, кистях, седле или разнице ног.',
       ankleLine: 'Голень и стопа держат прямой угол. На шести часах небольшой подъём на носок допустим.',
       ankleHeel: 'Пятка проваливается. Это не команда опустить седло.',
-      ankleToe: 'Носок висит. Это положение стопы, не тип велосипеда. Высоту седла по этому кадру не советуем.',
+      ankleToe: 'Стопа вытянута носком вниз. Это про ногу на педали, не про вид велосипеда. Седло по этому кадру не поднимаем и не опускаем.',
       backEasy: 'Для этого велосипеда более вертикальный корпус обычен.',
       backRace: 'Для низкого шоссе низкий корпус ожидаем. Вынос всё равно лучше смотреть вживую.',
       armGrips: 'На грипсах прямая рука грузит кисть иначе, чем на дуалках. Высоту руля смотрим вживую.',
       backTops: 'Руки наверху барана. Корпус в этом кадре выше посадки, под которую поставлен руль.',
+      backEnds: '{value}° внутри {min}–{max}°. Ниже, к {min}°, быстрее: вынос длиннее или ниже. Выше, к {max}°, спокойнее: вынос короче или выше.',
+      wishLow: 'Ниже',
+      wishHigh: 'Выше',
+      wishLowLine: 'Синяя линия на {goal}°: ниже, для скорости. Вынос длиннее или ниже.',
+      wishLowStep: 'Синяя линия — {shown}°, один шаг. Цель {goal}°: ниже, для скорости. Вынос длиннее или ниже.',
+      wishHighLine: 'Синяя линия на {goal}°: выше, для спокойной езды. Вынос короче или выше.',
+      wishHighStep: 'Синяя линия — {shown}°, один шаг. Цель {goal}°: выше, для спокойной езды. Вынос короче или выше.',
+      wishLowTops: 'На этом кадре руки сверху. На нижнем хвате корпус и так уходит ниже.',
+      wishBlue: 'Синяя линия — шаг спины. Оранжевый — как сейчас.',
       armTops: 'Руки наверху барана, до хвата ближе, чем на дуалках и внизу. Сгиб руки относится к верхнему хвату.',
-      crankMark: 'Два щелчка по этому кадру: сначала центр каретки, затем ось педали.',
-      crankStep: 'На картинке седло сдвинулось бы на {mm} мм. Это один шаг, не конечная высота.',
-      crankNeed: 'Миллиметры появятся, когда в велосипеде указан шатун. Потом на нижнем фото два щелчка: центр каретки и ось педали.',
-      crankPoints: 'Шатун {mm} мм уже есть. Не хватает двух щелчков на нижнем фото: сначала центр каретки, затем ось педали.',
+      crankMark: 'Жёлтые точки ставишь ты. Щёлкни два раза: сначала центр каретки, затем ось педали. Оранжевые точки на теле — это суставы, их не ставят.',
+      crankNext: 'Первая точка — центр каретки. Теперь щёлкни ось педали.',
+      crankDone: 'Две жёлтые точки — линейка шатуна. Следующий щелчок сотрёт их и начнёт сначала.',
+      crankStep: 'Седло на картинке сдвинуто на {mm} мм. Это один шаг к норме, не высота седла от каретки.',
+      crankStill: 'Седло на картинке остаётся на месте.',
+      crankNeed: 'Сначала укажи длину шатуна у велосипеда. Потом щёлкни два раза по нижнему фото: центр каретки, затем ось педали.',
+      crankPoints: 'На нижнем фото поставь две жёлтые точки: сначала центр каретки, потом ось педали. Это линейка, по ней посчитаем сдвиг седла в миллиметрах. Шатун {mm} мм уже записан.',
       fitBikeOn: 'В совете велосипед «{name}». Шатун, вынос и падение входят во фразу, только если угол уже вне коридора. Градус не меняется.',
       fitBikeOff: 'Велосипед ещё не выбран. Совет идёт по коридору, размеры не участвуют. Выберешь его внизу, у сохранения.',
       videoFloat: 'За оборот углы плавают больше чем на 4°. Посадку лучше смотреть вживую.',
@@ -974,7 +1004,7 @@ export const dict: Record<Locale, Dict> = {
         title: 'Two frames',
         down: { title: 'Crank down', text: 'Pedal at 6 o’clock, leg almost straight. This shows knee, back and arm.' },
         up: { title: 'Crank up', text: 'Same spot, pedal at 12 o’clock, foot still on the pedal. This frame is for the hip.' },
-        marks: 'On the lower frame, two clicks come next: the bottom-bracket centre, then the pedal axle. The crank length from the account turns them into millimetres.',
+        marks: 'On the lower photo you place two yellow points: the bottom-bracket centre, then the pedal axle. That is the ruler. The amber points on the body are placed by the site.',
       },
       next: 'Next — read the photo',
     },
@@ -1007,7 +1037,10 @@ export const dict: Record<Locale, Dict> = {
       ghostTarget: 'Target',
       ghostLegend: 'Amber is how you sit now. The white dashed line is where to aim.',
       ghostAllIn: 'Every angle is within the guide — nothing to move.',
-      saveImage: 'Save image',
+      zoomIn: 'Larger',
+      zoomOut: 'Smaller',
+      zoomReset: 'Normal size',
+      saveImage: 'Download the marked photo',
       saveVideo: 'Save video',
       recording: 'Recording…',
       photos: 'Two photos of the same position',
@@ -1046,16 +1079,28 @@ export const dict: Record<Locale, Dict> = {
       saddleHeld: 'This frame does not say to move the saddle. The reason is the foot, the hands, the saddle, or a leg-length difference.',
       ankleLine: 'Shin and foot hold a right angle. A small rise onto the toe at six o’clock is fine.',
       ankleHeel: 'The heel drops. That is not an order to lower the saddle.',
-      ankleToe: 'The toe hangs. That is the foot, not the bike type. This frame does not advise a saddle change.',
+      ankleToe: 'The foot is pointed, toe down. That is the foot on the pedal, not the bike type. This frame does not say to raise or lower the saddle.',
       backEasy: 'A more upright torso is ordinary on this bike.',
       backRace: 'A low torso is expected on a low road bike. Stem length is still a visit.',
       armGrips: 'On grips a straight arm loads the wrist differently than on the hoods. Bar height is a visit.',
       backTops: 'The hands are on the tops. In this frame the torso sits higher than the position the drop bar is set for.',
+      backEnds: '{value}° sits inside {min}–{max}°. Lower, toward {min}°, is faster: a longer or lower stem. Higher, toward {max}°, is calmer: a shorter or higher stem.',
+      wishLow: 'Lower',
+      wishHigh: 'Higher',
+      wishLowLine: 'The blue line is at {goal}°: lower, for speed. A longer or lower stem.',
+      wishLowStep: 'The blue line is {shown}°, one step. The goal is {goal}°: lower, for speed. A longer or lower stem.',
+      wishHighLine: 'The blue line is at {goal}°: higher, for an easy ride. A shorter or higher stem.',
+      wishHighStep: 'The blue line is {shown}°, one step. The goal is {goal}°: higher, for an easy ride. A shorter or higher stem.',
+      wishLowTops: 'The hands are on the tops in this frame. The drops already bring the torso down.',
+      wishBlue: 'The blue line is one step of the back. Amber is how you sit now.',
       armTops: 'The hands are on the tops, so the reach is shorter than on the hoods or in the drops. The arm bend belongs to that grip.',
-      crankMark: 'Two clicks on this frame: the bottom-bracket centre first, then the pedal axle.',
-      crankStep: 'In the picture the saddle would move {mm} mm. That is one step, not the final height.',
-      crankNeed: 'Millimetres appear once the bike has a crank length. Then two clicks on the lower photo: the bottom-bracket centre and the pedal axle.',
-      crankPoints: 'Crank length {mm} mm is already saved. Two clicks are still missing on the lower photo: the bottom-bracket centre, then the pedal axle.',
+      crankMark: 'The yellow points are yours. Click twice: the bottom-bracket centre, then the pedal axle. The amber points on the body are the joints. You do not place those.',
+      crankNext: 'The first point is the bottom-bracket centre. Now click the pedal axle.',
+      crankDone: 'The two yellow points are the crank ruler. The next click clears them and starts again.',
+      crankStep: 'The saddle in the picture has moved {mm} mm. That is one step toward the guide, not the saddle height from the bottom bracket.',
+      crankStill: 'The saddle in the picture stays where it is.',
+      crankNeed: 'First enter the crank length on the bike. Then click the lower photo twice: the bottom-bracket centre, then the pedal axle.',
+      crankPoints: 'On the lower photo place two yellow points: the bottom-bracket centre, then the pedal axle. That ruler gives the saddle shift in millimetres. Crank length {mm} mm is already saved.',
       fitBikeOn: 'The advice uses “{name}”. Crank, stem and drop enter the sentence only when an angle is already outside the target. The degree does not change.',
       fitBikeOff: 'No bike is chosen yet. The advice follows the target, and the sizes stay out. Choose the bike below, where the reading is saved.',
       videoFloat: 'The angles drift by more than 4° during a stroke. Worth checking the fit in person.',

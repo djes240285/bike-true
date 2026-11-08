@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { angleAt, torsoInclinationDeg, type Point } from './geometry';
-import { idealBottom, idealTop, moved, targetFor, type Joints } from './target';
+import { backStep, idealBottom, idealTop, moved, targetFor, wishBack, type Joints } from './target';
 
 const p = (x: number, y: number): Point => ({ x, y, visibility: 1 });
 const length = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -23,6 +23,23 @@ describe('target', () => {
     expect(targetFor('arm', 174)).toBe(171);
     expect(targetFor('back', 33)).toBe(35);
     expect(targetFor('back', 33, { back: { min: 32, max: 50 } })).toBe(33);
+    expect(backStep(45, { min: 42, max: 50 }, 'low')).toEqual({ goal: 42, shown: 42 });
+    expect(backStep(45, { min: 42, max: 50 }, 'high')).toEqual({ goal: 50, shown: 48 });
+    expect(backStep(42, { min: 42, max: 50 }, 'low')).toBeNull();
+    expect(backStep(40, { min: 42, max: 50 }, 'low')).toBeNull();
+  });
+
+  test('желание спины двигает только корпус, одним шагом', () => {
+    const lower = wishBack(rider, 42);
+    const higher = wishBack(rider, 48);
+    expect(torsoInclinationDeg(lower.shoulder, lower.hip)).toBeCloseTo(42, 5);
+    expect(torsoInclinationDeg(higher.shoulder, higher.hip)).toBeCloseTo(48, 5);
+    expect(lower.hip).toEqual(rider.hip);
+    expect(lower.knee).toEqual(rider.knee);
+    expect(lower.ankle).toEqual(rider.ankle);
+    expect(length(lower.shoulder, lower.elbow)).toBeCloseTo(length(rider.shoulder, rider.elbow), 3);
+    expect(length(lower.elbow, lower.wrist)).toBeCloseTo(length(rider.elbow, rider.wrist), 3);
+    expect(angleAt(lower.shoulder, lower.elbow, lower.wrist)).toBeCloseTo(angleAt(rider.shoulder, rider.elbow, rider.wrist) ?? 0, 3);
   });
 
   test('нижний кадр: углы уходят к ориентиру, длины звеньев сохраняются', () => {

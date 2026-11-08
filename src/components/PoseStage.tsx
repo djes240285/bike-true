@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import type { Dict } from '../i18n';
 import type { Point } from '../lib/geometry';
 import { JOINT_NAMES, lerpJoints, type Joints } from '../lib/target';
@@ -8,12 +8,14 @@ export type Scene = {
   current: Joints;
   ideal: Joints;
   changed: boolean;
+  wish?: Joints | null;
 };
 
 const MAX_WIDTH = 1280;
 const CYCLE_MS = 5200;
 const AMBER = '#fbbf24';
 const AMBER_DEEP = '#d97706';
+const BLUE = '#3d7eff';
 
 /** 0 — как сейчас, 1 — ориентир. Пауза, переход, пауза, возврат. */
 function phase(time: number): number {
@@ -44,6 +46,18 @@ function draw(context: CanvasRenderingContext2D, scene: Scene, scale: number, k:
     context.lineJoin = 'round';
     context.beginPath();
     at(scene.ideal).forEach((point, index) => (index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
+    context.stroke();
+    context.restore();
+  }
+
+  if (scene.wish) {
+    context.save();
+    context.strokeStyle = BLUE;
+    context.lineWidth = line * 1.35;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    context.beginPath();
+    at(scene.wish).forEach((point, index) => (index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
     context.stroke();
     context.restore();
   }
@@ -82,12 +96,18 @@ function draw(context: CanvasRenderingContext2D, scene: Scene, scale: number, k:
     context.fillText(label, pad * 2, pad + boxHeight * 0.66);
   }
 
-  for (const mark of marks) {
+  marks.forEach((mark, index) => {
+    const radius = line * 2.4;
     context.fillStyle = '#fde68a';
     context.beginPath();
-    context.arc(mark.x * scale, mark.y * scale, line * 2.2, 0, Math.PI * 2);
+    context.arc(mark.x * scale, mark.y * scale, radius, 0, Math.PI * 2);
     context.fill();
-  }
+    context.fillStyle = '#1c1917';
+    context.font = `700 ${Math.round(radius * 1.15)}px "Inter Variable", system-ui, sans-serif`;
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText(String(index + 1), mark.x * scale, mark.y * scale + radius * 0.08);
+  });
 }
 
 function pickVideoType() {
@@ -119,6 +139,14 @@ export default function PoseStage({
   onMark?: (point: Point) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ distance: number; zoom: number } | null>(null);
+  const dragged = useRef(false);
+  const view = useRef({ zoom: 1, x: 0, y: 0 });
+  view.current = { zoom, x: pan.x, y: pan.y };
   const [recording, setRecording] = useState(false);
   const videoType = useRef<string | null>(null);
   const scale = Math.min(1, MAX_WIDTH / scene.image.width);
@@ -126,6 +154,89 @@ export default function PoseStage({
   useEffect(() => {
     videoType.current = pickVideoType();
   }, []);
+
+  useEffect(() => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  }, [scene.image]);
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    function onWheel(event: WheelEvent) {
+      if (view.current.zoom <= 1) return;
+      event.preventDefault();
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? stage.clientHeight : 1;
+      setPan(clampPan(view.current.x - event.deltaX * unit, view.current.y - event.deltaY * unit, view.current.zoom));
+    }
+    stage.addEventListener('wheel', onWheel, { passive: false });
+    return () => stage.removeEventListener('wheel', onWheel);
+  }, [scene.image]);
+
+  function clampPan(x: number, y: number, nextZoom: number) {
+    const stage = stageRef.current;
+    const canvas = canvasRef.current;
+    if (!stage || !canvas) return { x, y };
+    const limitX = Math.max(0, canvas.offsetWidth * (nextZoom - 1) / 2);
+    const limitY = Math.max(0, canvas.offsetHeight * (nextZoom - 1) / 2);
+    return {
+      x: Math.min(limitX, Math.max(-limitX, x)),
+      y: Math.min(limitY, Math.max(-limitY, y)),
+    };
+  }
+
+  function changeZoom(next: number) {
+    const value = Math.min(5, Math.max(1, Math.round(next * 100) / 100));
+    setZoom(value);
+    setPan((current) => clampPan(current.x, current.y, value));
+  }
+
+  function place(event: ReactPointerEvent) {
+    if (!onMark) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width < 1 || rect.height < 1) return;
+    const x = ((event.clientX - rect.left) / rect.width) * scene.image.width;
+    const y = ((event.clientY - rect.top) / rect.height) * scene.image.height;
+    if (x < 0 || y < 0 || x > scene.image.width || y > scene.image.height) return;
+    onMark({ x, y, visibility: 1 });
+  }
+
+  function pointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if ((event.target as HTMLElement).closest('.zoom-bar')) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    dragged.current = false;
+    if (pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()];
+      pinch.current = { distance: Math.hypot(a.x - b.x, a.y - b.y) || 1, zoom };
+      dragged.current = true;
+    }
+  }
+
+  function pointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const previous = pointers.current.get(event.pointerId);
+    if (!previous) return;
+    const dx = event.clientX - previous.x;
+    const dy = event.clientY - previous.y;
+    if (Math.hypot(dx, dy) > 8) dragged.current = true;
+    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (pointers.current.size >= 2 && pinch.current) {
+      const [a, b] = [...pointers.current.values()];
+      const distance = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      changeZoom(pinch.current.zoom * (distance / pinch.current.distance));
+      return;
+    }
+    if (view.current.zoom > 1 && dragged.current) setPan((current) => clampPan(current.x + dx, current.y + dy, view.current.zoom));
+  }
+
+  function pointerUp(event: ReactPointerEvent<HTMLDivElement>) {
+    const pinching = pointers.current.size >= 2;
+    pointers.current.delete(event.pointerId);
+    if (pointers.current.size < 2) pinch.current = null;
+    if (!pinching && !dragged.current) place(event);
+  }
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -176,20 +287,30 @@ export default function PoseStage({
 
   return (
     <div className="pose-stage">
-      <div className="stage">
+      <div
+        className="stage"
+        ref={stageRef}
+        style={{ touchAction: zoom > 1 ? 'none' : 'pan-y', cursor: zoom > 1 ? 'grab' : undefined }}
+        onPointerDown={pointerDown}
+        onPointerMove={pointerMove}
+        onPointerUp={pointerUp}
+        onPointerCancel={pointerUp}
+      >
         <canvas
           ref={canvasRef}
-          style={onMark ? { cursor: 'crosshair' } : undefined}
-          onClick={onMark ? (event) => {
-            const rect = event.currentTarget.getBoundingClientRect();
-            const x = ((event.clientX - rect.left) / rect.width) * scene.image.width;
-            const y = ((event.clientY - rect.top) / rect.height) * scene.image.height;
-            onMark({ x, y, visibility: 1 });
-          } : undefined}
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            cursor: zoom > 1 ? 'grab' : onMark ? 'crosshair' : undefined,
+          }}
         />
+        <div className="zoom-bar">
+          <button type="button" aria-label={copy.zoomOut} onClick={() => changeZoom(zoom / 1.5)}>−</button>
+          <button type="button" aria-label={copy.zoomReset} onClick={() => changeZoom(1)}>{zoom === 1 ? '1×' : `${zoom.toFixed(1)}×`}</button>
+          <button type="button" aria-label={copy.zoomIn} onClick={() => changeZoom(zoom * 1.5)}>+</button>
+        </div>
       </div>
-      <p className="muted">{scene.changed ? copy.ghostLegend : copy.ghostAllIn}</p>
-      {onMark ? <p className="muted">{copy.crankMark}</p> : null}
+      <p className="muted">{scene.wish ? copy.wishBlue : scene.changed ? copy.ghostLegend : copy.ghostAllIn}</p>
+      {onMark ? <p className="muted">{marks.length >= 2 ? copy.crankDone : marks.length === 1 ? copy.crankNext : copy.crankMark}</p> : null}
       <div className="actions">
         <button className="button ghost" type="button" onClick={saveImage}>
           {copy.saveImage}

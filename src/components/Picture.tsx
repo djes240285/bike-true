@@ -4,6 +4,7 @@ import type { SavedBike } from '../lib/bike-sync';
 import type { FitId } from '../lib/fits';
 import type { AnkleStance } from '../lib/foot';
 import { corridorFor, explainFactors, leadingNote, splitAngles, angleVoice, type BodyLayer, type NoteCode } from '../lib/layers';
+import { backStep, type BackWish } from '../lib/target';
 import type { AngleReading } from '../lib/reading';
 import Factors from './Factors';
 import TextHint from './TextHint';
@@ -46,6 +47,9 @@ export default function Picture({
   ruler = false,
   spread,
   who = '',
+  wish = null,
+  onWish,
+  marks = 0,
 }: {
   locale: Locale;
   photo: AngleReading;
@@ -60,6 +64,9 @@ export default function Picture({
   ruler?: boolean;
   spread: { knee: number | null; hip: number | null } | null;
   who?: string;
+  wish?: BackWish | null;
+  onWish?: (next: BackWish | null) => void;
+  marks?: number;
 }) {
   const copy = dict[locale].analyze;
   const angles = dict[locale].angles;
@@ -72,11 +79,15 @@ export default function Picture({
   const bikeBits = bits(bike);
   const ankleLine = ankle === 'line' ? copy.ankleLine : ankle === 'heel' ? copy.ankleHeel : ankle === 'toe' ? copy.ankleToe : null;
   const crankLine = ruler && saddleStep !== null
-    ? copy.crankStep.replace('{mm}', String(saddleStep))
+    ? saddleStep === 0
+      ? copy.crankStill
+      : copy.crankStep.replace('{mm}', String(saddleStep))
     : ruler && hasNumber
-      ? (bike?.crank_mm != null
-        ? copy.crankPoints.replace('{mm}', String(bike.crank_mm))
-        : copy.crankNeed)
+      ? (bike?.crank_mm == null
+        ? copy.crankNeed
+        : marks === 1
+          ? copy.crankNext
+          : copy.crankPoints.replace('{mm}', String(bike.crank_mm)))
       : null;
 
   return (
@@ -106,7 +117,7 @@ export default function Picture({
           || lead === 'hip-flex'
           || lead === 'knee-ankle'
           || lead === 'arm-shoulder';
-        const sentence = voice === 'held'
+        let sentence = voice === 'held'
           ? copy.saddleHeld
           : voice === 'back-easy'
             ? copy.backEasy
@@ -121,6 +132,25 @@ export default function Picture({
                     : lead
                   ? copy.notes[NOTE_KEY[lead]].replace('{mm}', fill(lead, bike))
                   : advice[key][zone];
+        const tune = key === 'back' && zone === 'in' && !split && !shaky;
+        let wishLine: string | null = null;
+        if (tune) {
+          sentence = copy.backEnds
+            .replace('{value}', String(Math.round(value)))
+            .replaceAll('{min}', String(corridor.min))
+            .replaceAll('{max}', String(corridor.max));
+          if (wish) {
+            const step = backStep(value, corridor, wish);
+            if (step) {
+              const there = step.shown === step.goal;
+              const template = wish === 'low'
+                ? (there ? copy.wishLowLine : copy.wishLowStep)
+                : (there ? copy.wishHighLine : copy.wishHighStep);
+              wishLine = template.replace('{shown}', String(step.shown)).replaceAll('{goal}', String(step.goal));
+              if (wish === 'low' && hands === 'tops') wishLine = `${wishLine} ${copy.wishLowTops}`;
+            }
+          }
+        }
         let line = `${filmValue !== null ? copy.stackFilm : copy.stackPhoto} ${Math.round(value)}°`;
         if (photoValue !== null && filmValue !== null) {
           const template = split ? copy.stackSplit : copy.stackAgree;
@@ -136,6 +166,13 @@ export default function Picture({
               {line}
               {split || shaky ? (key === 'knee' && holdKnee ? <i>{sentence}</i> : null) : <i>{sentence}</i>}
             </span>
+            {tune ? (
+              <span className="wish-row">
+                <button type="button" className={`button ghost${wish === 'low' ? ' is-on' : ''}`} aria-pressed={wish === 'low'} disabled={backStep(value, corridor, 'low') === null} onClick={() => onWish?.(wish === 'low' ? null : 'low')}>{copy.wishLow}</button>
+                <button type="button" className={`button ghost${wish === 'high' ? ' is-on' : ''}`} aria-pressed={wish === 'high'} disabled={backStep(value, corridor, 'high') === null} onClick={() => onWish?.(wish === 'high' ? null : 'high')}>{copy.wishHigh}</button>
+              </span>
+            ) : null}
+            {wishLine ? <small className="wish-note">{wishLine}</small> : null}
           </article>
         );
       })}

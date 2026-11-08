@@ -22,6 +22,49 @@ export function jointsOf(landmarks: Point[]): Joints | null {
 
 const GHOST_STEP = 3;
 
+export type BackWish = 'low' | 'high';
+
+/** Внутри нормы: один шаг не больше 3° к выбранному концу. Снаружи желания нет. */
+export function backStep(
+  value: number,
+  corridor: { min: number; max: number },
+  wish: BackWish,
+): { goal: number; shown: number } | null {
+  const now = Math.round(value);
+  if (now < corridor.min || now > corridor.max) return null;
+  const goal = wish === 'low' ? corridor.min : corridor.max;
+  if (now === goal) return null;
+  const shown = now < goal ? Math.min(goal, now + GHOST_STEP) : Math.max(goal, now - GHOST_STEP);
+  return { goal, shown };
+}
+
+/** Только наклон корпуса. Бедро, колено и сложение руки остаются. */
+export function wishBack(current: Joints, shown: number): Joints {
+  const { shoulder, elbow, wrist, hip } = current;
+  const torso = distance(shoulder, hip);
+  const target = radians(shown);
+  const forward = Math.sign(shoulder.x - hip.x) || 1;
+  const up = Math.sign(shoulder.y - hip.y) || -1;
+  const nextShoulder = {
+    x: hip.x + forward * torso * Math.cos(target),
+    y: hip.y + up * torso * Math.sin(target),
+  };
+  const shift = { x: nextShoulder.x - shoulder.x, y: nextShoulder.y - shoulder.y };
+  return {
+    ...current,
+    shoulder: keep(nextShoulder, shoulder),
+    elbow: keep({ x: elbow.x + shift.x, y: elbow.y + shift.y }, elbow),
+    wrist: keep({ x: wrist.x + shift.x, y: wrist.y + shift.y }, wrist),
+  };
+}
+
+export function wishJoints(current: Joints, wish: BackWish, corridor: { min: number; max: number }): Joints | null {
+  const angle = torsoInclinationDeg(current.shoulder, current.hip);
+  if (angle === null) return null;
+  const step = backStep(angle, corridor, wish);
+  return step ? wishBack(current, step.shown) : null;
+}
+
 type Band = { min: number; max: number };
 type Bands = Partial<Record<AngleKey, Band>>;
 
