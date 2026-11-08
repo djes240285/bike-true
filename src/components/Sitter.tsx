@@ -5,6 +5,7 @@ import type { SitterDraft, SitterSlot } from '../lib/device';
 import type { FitId } from '../lib/fits';
 import { corridorFor, type BodyLayer, type Grade } from '../lib/layers';
 import type { AngleReading } from '../lib/reading';
+import TextHint from './TextHint';
 
 const QUESTIONS: (keyof BodyLayer)[] = ['posterior', 'hip', 'ankle', 'shoulder'];
 const ANGLE: Record<keyof BodyLayer, AngleKey> = {
@@ -90,7 +91,10 @@ export default function Sitter({
 
   return (
     <section className="sitter">
-      <p className="fit-lead">{copy.sitterLead}</p>
+      <p className="ask-line">
+        {copy.sitterLead}
+        <TextHint label={copy.sitterLead} title={copy.sitterLead} text={copy.sitterOtherNote} />
+      </p>
       <div className="ask-row" role="group" aria-label={copy.sitterLead}>
         <button className={`button ghost${draft.who === 'me' ? ' is-on' : ''}`} type="button" aria-pressed={draft.who === 'me'} onClick={() => setWho('me')}>
           {copy.sitterMe}
@@ -109,10 +113,12 @@ export default function Sitter({
             {copy.sitterHeight}
             <input inputMode="numeric" value={slot.height} onChange={(event) => setSlot({ ...slot, height: event.target.value.replace(/\D/g, '').slice(0, 3) })} />
           </label>
-          <p className="note">{copy.sitterOtherNote}</p>
         </div>
-      ) : <p className="note">{copy.sitterMine}</p>}
-      <p>{copy.sitterBody}</p>
+      ) : null}
+      <p className="ask-line">
+        {copy.bodyTitle}
+        <TextHint label={copy.bodyTitle} title={copy.bodyTitle} text={copy.sitterBody} />
+      </p>
       {QUESTIONS.map((question) => (
         <div key={question} className="grade-row">
           <span>{questionText(copy, question)}</span>

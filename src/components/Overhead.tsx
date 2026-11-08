@@ -445,7 +445,6 @@ export default function Overhead({
   return (
     <section className="sub-layer">
       <video ref={workRef} className="film-work" muted playsInline preload="auto" />
-      <p className="sub-kicker">{copy.subNote}</p>
       <h2>
         {copy.overheadTitle}
         <TextHint

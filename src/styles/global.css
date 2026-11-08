@@ -1270,7 +1270,12 @@ html[data-theme="dark"] .film-switch .button.ghost.is-on {
   background: var(--card);
   box-shadow: var(--shadow);
 }
-.picture-result h2 { margin: 0; font-size: 22px; color: var(--ink); }
+.picture-result h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 22px; color: var(--ink); }
+.ask-line { display: flex; align-items: center; gap: 8px; margin: 0; }
+.audit { margin: 4px 0 0; }
+.audit summary { width: fit-content; cursor: pointer; color: var(--muted); font-size: 15px; }
+.audit summary:hover { color: var(--ink); }
+.audit .picture-context { margin-top: 10px; }
 .picture-context {
   display: grid;
   gap: 8px;

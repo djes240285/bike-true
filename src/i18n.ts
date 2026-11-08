@@ -106,9 +106,11 @@ export type Dict = {
     sourceFilm: string;
     sourcePhotos: string;
     askFit: string;
+    askFitHint: string;
     fitNotes: Record<'city' | 'endurance' | 'gravel' | 'race' | 'mtb', string>;
     askHands: string;
     askPain: string;
+    askPainHint: string;
     handsHoods: string;
     handsDrops: string;
     handsTops: string;
@@ -228,6 +230,7 @@ export type Dict = {
     stackNamed: string;
     stackOpen: string;
     saveScope: string;
+    saveWhere: string;
     factorTitle: string;
     factorLead: string;
     factorBike: string;
@@ -526,16 +529,18 @@ export const dict: Record<Locale, Dict> = {
       sourceNone: 'Пока ничего не выбрано. Нажми ролик или два фото.',
       sourceFilm: 'Считаем ролик.',
       sourcePhotos: 'Считаем два фото.',
-      askFit: 'Сначала велосипед. От него зависят слова, не таблица идеальных градусов.',
+      askFit: 'Велосипед',
+      askFitHint: 'От него зависят слова совета. Колено, рука и бедро от типа не меняются. Меняется норма спины.',
       fitNotes: {
-        city: 'Городской. Норма спины от 40°, не от 35°. Колено, рука и бедро не меняются.',
-        endurance: 'Шоссейник. Норма спины обычная: 35–50°. Колено, рука и бедро не меняются.',
-        gravel: 'Гравий. Норма спины от 40°. Колено, рука и бедро не меняются.',
-        race: 'Тот же шоссейник, руль ниже. Норма спины может опускаться до 32°. Остальные углы те же.',
-        mtb: 'Горный. Норма спины может доходить до 58°. Колено, рука и бедро не меняются.',
+        city: 'Норма спины от 40°.',
+        endurance: 'Норма спины 35–50°.',
+        gravel: 'Норма спины от 40°.',
+        race: 'Норма спины от 32°.',
+        mtb: 'Норма спины до 58°.',
       },
       askHands: 'Где руки на этом кадре?',
-      askPain: 'Что уже болит? Отмеченное гасит совет крутить седло.',
+      askPain: 'Что уже болит?',
+      askPainHint: 'Отмеченное гасит совет крутить седло.',
       handsHoods: 'Дуалки',
       handsDrops: 'Низ руля',
       handsTops: 'Верх руля',
@@ -564,7 +569,7 @@ export const dict: Record<Locale, Dict> = {
       bikeSkip: 'Без велосипеда',
       bodyTitle: 'Запас тела',
       bodyHint: 'Нажатие фиксируется. «Легко» и «дотягиваюсь» оставляют обычный коридор. «С усилием» и «не могу» сдвигают его. Градус с ролика не переписывается.',
-      sitterLead: 'Кто сидит на этом разборе',
+      sitterLead: 'Кто сидит',
       sitterMe: 'Я',
       sitterOther: 'Другой',
       sitterName: 'Имя',
@@ -593,7 +598,7 @@ export const dict: Record<Locale, Dict> = {
       bikeLimit: 'В кабинете уже максимум велосипедов.',
       subNote: 'Подписка: оверхед, запас тела и свой велосипед. Кассы нет, поэтому блок открыт.',
       overheadTitle: 'Оверхед',
-      overheadHint: 'Присед с палкой, босиком. Можно несколько роликов. Читаю обе стороны, от голени до кисти и шеи. Это наблюдение, не диагноз.',
+      overheadHint: 'Присед с палкой. На углы посадки не влияет.',
       overheadFront: 'Спереди',
       overheadSide: 'Сбоку',
       overheadUpload: 'Загрузить приседы',
@@ -645,7 +650,7 @@ export const dict: Record<Locale, Dict> = {
       overheadFlagHip: 'Бёдра в нижней точке почти прямые — присед не дошёл. Вывод по глубине пока слабый.',
       stackTitle: 'Итог',
       stackSitter: 'Этот итог для {who}.',
-      stackBody: 'Запас тела в этом итоге уже учтён. В кабинет он попадает только по сохранению.',
+      stackBody: 'Запас тела уже в итоге.',
       rulesTitle: 'Как читать цифры',
       ruleAngle: 'Число с кадра остаётся как есть.',
       ruleBike: 'Размер велосипеда меняет совет, только если угол уже не в своей норме.',
@@ -660,6 +665,7 @@ export const dict: Record<Locale, Dict> = {
       stackNamed: 'Считаем по «{name}».',
       stackOpen: 'Велосипед не выбран, размеры в совете не участвуют.',
       saveScope: 'Четыре угла — в выбранный велосипед. Оверхед и запас тела — в карточку человека: они одни на все велосипеды. Пустой блок старую карточку не стирает.',
+      saveWhere: 'Куда сохранится',
       factorTitle: 'Что вошло в расчёт',
       factorLead: 'Число с кадра остаётся как есть. Размер велосипеда меняет совет, только если угол уже не в своей норме. «С усилием» и «не могу» сдвигают эту норму. «Легко» и «дотягиваюсь» — нет.',
       factorBike: 'Велосипед',
@@ -1017,16 +1023,18 @@ export const dict: Record<Locale, Dict> = {
       sourceNone: 'Nothing is selected. Press a clip or two photos.',
       sourceFilm: 'The clip is what we count.',
       sourcePhotos: 'The two photos are what we count.',
-      askFit: 'The bike comes first. It changes the words, not a table of ideal degrees.',
+      askFit: 'Bike',
+      askFitHint: 'It changes the words of the advice. Knee, arm and hip stay the same. Only the back range changes.',
       fitNotes: {
-        city: 'City bike. The back range starts at 40°, not 35°. Knee, arm and hip stay put.',
-        endurance: 'Road bike. The back range stays the usual 35–50°. Knee, arm and hip stay put.',
-        gravel: 'Gravel. The back range starts at 40°. Knee, arm and hip stay put.',
-        race: 'The same road bike, with a lower bar. The back range can go down to 32°. The other angles stay put.',
-        mtb: 'Mountain. The back range can reach 58°. Knee, arm and hip stay put.',
+        city: 'Back range from 40°.',
+        endurance: 'Back range 35–50°.',
+        gravel: 'Back range from 40°.',
+        race: 'Back range from 32°.',
+        mtb: 'Back range up to 58°.',
       },
       askHands: 'Where are the hands in this frame?',
-      askPain: 'What already hurts? A mark here holds the saddle-height advice.',
+      askPain: 'What already hurts?',
+      askPainHint: 'A mark here holds the saddle-height advice.',
       handsHoods: 'Hoods',
       handsDrops: 'Drops',
       handsTops: 'Tops',
@@ -1055,7 +1063,7 @@ export const dict: Record<Locale, Dict> = {
       bikeSkip: 'No bike',
       bodyTitle: 'What your body can do',
       bodyHint: 'A tap sticks. “Easy” and “I can reach” keep the usual target. “With effort” and “I can’t” shift it. The degree from the clip is not rewritten.',
-      sitterLead: 'Who is on this reading',
+      sitterLead: 'Who is sitting',
       sitterMe: 'Me',
       sitterOther: 'Someone else',
       sitterName: 'Name',
@@ -1084,7 +1092,7 @@ export const dict: Record<Locale, Dict> = {
       bikeLimit: 'Your account already has the maximum number of bikes.',
       subNote: 'Subscription: the overhead squat, what your body can do, and your own bike. There’s no checkout yet, so this block is open.',
       overheadTitle: 'Overhead squat',
-      overheadHint: 'A squat with a stick, barefoot. Several clips are fine. Both sides are read, from the shin to the hand and the neck. This is an observation, not a diagnosis.',
+      overheadHint: 'A squat with a stick. It does not change the position angles.',
       overheadFront: 'Front',
       overheadSide: 'Side',
       overheadUpload: 'Upload squats',
@@ -1136,7 +1144,7 @@ export const dict: Record<Locale, Dict> = {
       overheadFlagHip: 'The hips stay nearly straight at the bottom — the squat did not get there. The depth reading is still weak.',
       stackTitle: 'Result',
       stackSitter: 'This result is for {who}.',
-      stackBody: 'What the body can do is already in this result. It reaches the account only when you save.',
+      stackBody: 'What the body can do is already in this result.',
       rulesTitle: 'How to read the numbers',
       ruleAngle: 'The number from the frame stays as it is.',
       ruleBike: 'Bike size changes the advice only when an angle is already outside its range.',
@@ -1151,6 +1159,7 @@ export const dict: Record<Locale, Dict> = {
       stackNamed: 'Reading “{name}”.',
       stackOpen: 'No bike is chosen, so sizes stay out of the advice.',
       saveScope: 'The four angles go on the chosen bike. The overhead squat and the body grades go on the person card: one card for every bike. An empty block does not erase the card already saved.',
+      saveWhere: 'Where a save goes',
       factorTitle: 'What entered the calculation',
       factorLead: 'The number from the frame stays as it is. Bike size changes the advice only when an angle is already outside its range. “With effort” and “I can’t” move that range. “Easy” and “I can reach” do not.',
       factorBike: 'Bike',

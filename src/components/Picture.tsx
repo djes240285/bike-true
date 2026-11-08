@@ -6,6 +6,7 @@ import type { AnkleStance } from '../lib/foot';
 import { corridorFor, explainFactors, leadingNote, splitAngles, angleVoice, type BodyLayer, type NoteCode } from '../lib/layers';
 import type { AngleReading } from '../lib/reading';
 import Factors from './Factors';
+import TextHint from './TextHint';
 
 const KEYS: AngleKey[] = ['knee', 'back', 'arm', 'hip'];
 
@@ -82,7 +83,10 @@ export default function Picture({
     <section className="picture">
       {hasNumber || ankleLine || crankLine ? (
         <div className="picture-result">
-          <h2>{copy.stackTitle}</h2>
+          <h2>
+            {copy.stackTitle}
+            <TextHint label={copy.rulesTitle} title={copy.rulesTitle} notes={[copy.ruleAngle, copy.ruleBike, copy.ruleBody]} />
+          </h2>
           {who ? <p>{copy.stackSitter.replace('{who}', who)}</p> : null}
           {bodyOn ? <p>{copy.stackBody}</p> : null}
       {KEYS.map((key) => {
@@ -139,18 +143,15 @@ export default function Picture({
           {crankLine ? <p>{crankLine}</p> : null}
         </div>
       ) : null}
-      <aside className="picture-context">
-        <h2>{copy.rulesTitle}</h2>
-        <ul>
-          <li>{copy.ruleAngle}</li>
-          <li>{copy.ruleBike}</li>
-          <li>{copy.ruleBody}</li>
-        </ul>
-        <p>{copy.stackBike}</p>
-        {bike ? <p>{copy.stackNamed.replace('{name}', bike.name)}</p> : <p>{copy.stackOpen}</p>}
-        {bike?.saddle_mm != null ? <p>{copy.stackSaddle.replace('{mm}', String(bike.saddle_mm))}</p> : null}
-        <Factors locale={locale} scope="all" rows={explainFactors(source, bikeBits, body, fit)} />
-      </aside>
+      <details className="audit">
+        <summary>{copy.factorTitle}</summary>
+        <div className="picture-context">
+          <p>{copy.stackBike}</p>
+          {bike ? <p>{copy.stackNamed.replace('{name}', bike.name)}</p> : <p>{copy.stackOpen}</p>}
+          {bike?.saddle_mm != null ? <p>{copy.stackSaddle.replace('{mm}', String(bike.saddle_mm))}</p> : null}
+          <Factors locale={locale} scope="all" rows={explainFactors(source, bikeBits, body, fit)} />
+        </div>
+      </details>
     </section>
   );
 }

@@ -5,7 +5,7 @@ import { readReading, readSitter, writeReading, writeSitter, type SitterDraft } 
 import { clearFrames, loadFrame, saveFrame } from '../lib/frames';
 import type { PersonOverhead } from '../lib/account';
 import type { SavedBike } from '../lib/bike-sync';
-import { corridorFor, keptReading, saddleHeld, angleVoice, type BodyLayer } from '../lib/layers';
+import { corridorFor, keptReading, saddleHeld, type BodyLayer } from '../lib/layers';
 import { pathFor } from '../lib/paths';
 import { crowd, footStance, readFrame, toPixels, type AngleReading, type Frame, type Point } from '../lib/reading';
 import { crankScale, shiftMm, type AnkleStance } from '../lib/foot';
@@ -17,6 +17,7 @@ import Overhead from './Overhead';
 import Picture from './Picture';
 import SaveReading from './SaveReading';
 import Sitter from './Sitter';
+import TextHint from './TextHint';
 const WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm';
 const MODEL =
   'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
@@ -344,9 +345,11 @@ export default function Analyzer({ locale }: { locale: Locale }) {
         sitter={sitter}
       />
       {loading ? <p className="muted loading-line">{t.analyze.loading}</p> : null}
-      <p className="fit-lead">{t.analyze.fitLead}</p>
       <section className="ask">
-        <p>{t.analyze.askFit}</p>
+        <p className="ask-line">
+          {t.analyze.askFit}
+          <TextHint label={t.analyze.askFit} title={t.analyze.askFit} text={t.analyze.askFitHint} />
+        </p>
         <div className="ask-row">
           {(['city', 'endurance', 'gravel', 'race', 'mtb'] as FitId[]).map((id) => (
             <button key={id} className={`button ghost${fitChoice === id ? ' is-on' : ''}`} type="button" aria-pressed={fitChoice === id} onClick={() => { fitTouched.current = true; setFitChoice(id); }}>
@@ -368,7 +371,10 @@ export default function Analyzer({ locale }: { locale: Locale }) {
             </button>
           ))}
         </div>
-        <p>{t.analyze.askPain}</p>
+        <p className="ask-line">
+          {t.analyze.askPain}
+          <TextHint label={t.analyze.askPain} title={t.analyze.askPain} text={t.analyze.askPainHint} />
+        </p>
         <div className="ask-row">
           {([
             ['foot', t.analyze.painFoot],
@@ -428,8 +434,6 @@ export default function Analyzer({ locale }: { locale: Locale }) {
             marks={marks}
             onMark={(point) => setMarks((current) => (current.length >= 2 ? [point] : [...current, point]))}
             fit={fitChoice}
-            hands={hands}
-            holdKnee={holdKnee}
             body={layerBody}
           />
           <FramePanel
@@ -446,8 +450,6 @@ export default function Analyzer({ locale }: { locale: Locale }) {
             disabled={loading}
             onFile={(file) => file && measure('top', file, true)}
             fit={fitChoice}
-            hands={hands}
-            holdKnee={holdKnee}
             body={layerBody}
         />
       </div>
@@ -480,7 +482,7 @@ export default function Analyzer({ locale }: { locale: Locale }) {
           <a className="button" href={pathFor(locale, '/visit')}>{t.analyze.toVisit}</a>
           <button className="button ghost" type="button" onClick={reset}>{t.analyze.reset}</button>
         </div>
-        {canSave ? <p className="note">{t.analyze.saveScope}</p> : null}
+        {canSave ? <TextHint label={t.analyze.saveWhere} title={t.analyze.saveWhere} text={t.analyze.saveScope} /> : null}
       </div>
     </div>
   );
@@ -502,8 +504,6 @@ function FramePanel({
   marks,
   onMark,
   fit,
-  hands,
-  holdKnee,
   body,
 }: {
   letter: string;
@@ -521,8 +521,6 @@ function FramePanel({
   marks?: Point[];
   onMark?: (point: Point) => void;
   fit: FitId | null;
-  hands: 'hoods' | 'drops' | 'tops' | 'grips' | null;
-  holdKnee: boolean;
   body: BodyLayer;
 }) {
   const t = dict[locale];
@@ -602,7 +600,7 @@ function FramePanel({
         return (
           <>
             {saved ? <p className="note">{copy.kept}</p> : null}
-            <AngleList locale={locale} reading={reading} keys={keys} fit={fit} hands={hands} holdKnee={holdKnee} body={body} />
+            <AngleList locale={locale} reading={reading} keys={keys} fit={fit} body={body} />
           </>
         );
       })()}
@@ -646,16 +644,12 @@ function AngleList({
   reading,
   keys,
   fit,
-  hands,
-  holdKnee,
   body,
 }: {
   locale: Locale;
   reading: AngleReading;
   keys: AngleKey[];
   fit: FitId | null;
-  hands: 'hoods' | 'drops' | 'tops' | 'grips' | null;
-  holdKnee: boolean;
   body: BodyLayer;
 }) {
   const t = dict[locale];
@@ -677,26 +671,11 @@ function AngleList({
         }
         const corridor = corridorFor(key, body, fit);
         const zone = band(value, corridor.min, corridor.max);
-        const voice = angleVoice(key, zone, fit, hands, holdKnee);
-        const sentence = voice === 'held'
-          ? copy.saddleHeld
-          : voice === 'back-easy'
-            ? copy.backEasy
-            : voice === 'back-race'
-              ? copy.backRace
-              : voice === 'arm-grips'
-                ? copy.armGrips
-                : voice === 'back-tops'
-                  ? copy.backTops
-                  : voice === 'arm-tops'
-                    ? copy.armTops
-                    : t.advice[key][zone];
         return (
           <article key={key} className={`readout ${zone}`}>
             <b>{value.toFixed(0)}°</b>
             <span>
               <strong>{t.angles[key].label}</strong>
-              {sentence}
             </span>
           </article>
         );

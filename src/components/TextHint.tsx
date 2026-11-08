@@ -3,14 +3,16 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 export default function TextHint({
   label,
   title,
-  text,
-  steps,
+  text = '',
+  steps = [],
+  notes = [],
   images = [],
 }: {
   label: string;
   title: string;
-  text: string;
-  steps: string[];
+  text?: string;
+  steps?: string[];
+  notes?: string[];
   images?: { src: string; caption: string }[];
 }) {
   const [open, setOpen] = useState(false);
@@ -102,10 +104,13 @@ export default function TextHint({
             </span>
           ) : null}
           <strong id={titleId}>{title}</strong>
-          <p>{text}</p>
-          <ol>
-            {steps.map((step) => <li key={step}>{step}</li>)}
-          </ol>
+          {text ? <p>{text}</p> : null}
+          {notes.map((note) => <p key={note}>{note}</p>)}
+          {steps.length > 0 ? (
+            <ol>
+              {steps.map((step) => <li key={step}>{step}</li>)}
+            </ol>
+          ) : null}
         </span>
       )}
     </span>
