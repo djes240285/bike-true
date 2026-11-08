@@ -102,7 +102,9 @@ export type Dict = {
     videoLong: string;
     videoMinute: string;
     fitLead: string;
-    sourcePick: string;
+    sourceNone: string;
+    sourceFilm: string;
+    sourcePhotos: string;
     askFit: string;
     fitNotes: Record<'city' | 'endurance' | 'gravel' | 'race' | 'mtb', string>;
     askHands: string;
@@ -122,6 +124,8 @@ export type Dict = {
     backEasy: string;
     backRace: string;
     armGrips: string;
+    backTops: string;
+    armTops: string;
     crankMark: string;
     crankStep: string;
     crankNeed: string;
@@ -133,6 +137,18 @@ export type Dict = {
     bikeSkip: string;
     bodyTitle: string;
     bodyHint: string;
+    sitterLead: string;
+    sitterMe: string;
+    sitterOther: string;
+    sitterName: string;
+    sitterHeight: string;
+    sitterMine: string;
+    sitterOtherNote: string;
+    sitterBody: string;
+    sitterIn: string;
+    sitterMoved: string;
+    sitterSpeaks: string;
+    sitterWait: string;
     gradeOn: string;
     gradeHold: string;
     gradeShift: string;
@@ -196,6 +212,8 @@ export type Dict = {
     overheadFlagArmsShort: string;
     overheadFlagHip: string;
     stackTitle: string;
+    stackSitter: string;
+    stackBody: string;
     rulesTitle: string;
     ruleAngle: string;
     ruleBike: string;
@@ -344,6 +362,7 @@ export type Dict = {
     saveReading: string;
     pickBike: string;
     error: string;
+    database: string;
     limit: string;
     taken: string;
     noEmail: string;
@@ -504,7 +523,9 @@ export const dict: Record<Locale, Dict> = {
       videoLong: 'Длиннее минуты: беру первую минуту.',
       videoMinute: 'Длиннее полуминуты: читаю до минуты, кадры чуть реже.',
       fitLead: 'Оверхед внизу — отдельно. Углы посадки он не переписывает.',
-      sourcePick: 'Ролик или два фото. Хватит одного.',
+      sourceNone: 'Пока ничего не выбрано. Нажми ролик или два фото.',
+      sourceFilm: 'Считаем ролик.',
+      sourcePhotos: 'Считаем два фото.',
       askFit: 'Сначала велосипед. От него зависят слова, не таблица идеальных градусов.',
       fitNotes: {
         city: 'Городской. Норма спины от 40°, не от 35°. Колено, рука и бедро не меняются.',
@@ -530,6 +551,8 @@ export const dict: Record<Locale, Dict> = {
       backEasy: 'Для этого велосипеда более вертикальный корпус обычен.',
       backRace: 'Для низкого шоссе низкий корпус ожидаем. Вынос всё равно лучше смотреть вживую.',
       armGrips: 'На грипсах прямая рука грузит кисть иначе, чем на дуалках. Высоту руля смотрим вживую.',
+      backTops: 'Руки наверху барана. Корпус в этом кадре выше посадки, под которую поставлен руль.',
+      armTops: 'Руки наверху барана, до хвата ближе, чем на дуалках и внизу. Сгиб руки относится к верхнему хвату.',
       crankMark: 'Два щелчка по этому кадру: сначала центр каретки, затем ось педали.',
       crankStep: 'На картинке седло сдвинулось бы на {mm} мм. Это один шаг, не конечная высота.',
       crankNeed: 'Миллиметры появятся, когда в велосипеде указан шатун. Потом на нижнем фото два щелчка: центр каретки и ось педали.',
@@ -541,6 +564,18 @@ export const dict: Record<Locale, Dict> = {
       bikeSkip: 'Без велосипеда',
       bodyTitle: 'Запас тела',
       bodyHint: 'Нажатие фиксируется. «Легко» и «дотягиваюсь» оставляют обычный коридор. «С усилием» и «не могу» сдвигают его. Градус с ролика не переписывается.',
+      sitterLead: 'Кто сидит на этом разборе',
+      sitterMe: 'Я',
+      sitterOther: 'Другой',
+      sitterName: 'Имя',
+      sitterHeight: 'Рост, см',
+      sitterMine: 'Твой рост остаётся в кабинете, в мерках. Сюда он не пишется и градусы не меняет.',
+      sitterOtherNote: 'Имя и рост остаются у этого разбора. Кабинет и твои мерки не меняются. В градус рост не переводится.',
+      sitterBody: 'Запас тела этого человека. «Легко» и «Дотягиваюсь» норму не двигают. «С усилием» и «Не могу» двигают. Градус с кадра остаётся.',
+      sitterIn: 'В итоге учтено. Норма «{angle}» остаётся {min}–{max}°.',
+      sitterMoved: 'В итоге учтено. Норма «{angle}» теперь {min}–{max}°.',
+      sitterSpeaks: 'В итоге учтено. Совет по «{angle}» уже из этого ответа, число остаётся {value}°.',
+      sitterWait: 'Выбрано. В итоге появится, когда на кадре будет этот угол.',
       gradeOn: 'Выбрано',
       gradeHold: 'Коридор обычный.',
       gradeShift: 'Коридор сдвинут.',
@@ -579,8 +614,8 @@ export const dict: Record<Locale, Dict> = {
         'Сбоку: весь человек в кадре, присед до самой низкой точки.',
         'Ролик до минуты или два фото: одно спереди, одно сбоку, в нижней точке.',
       ],
-      overheadPhotos: 'Два фото',
-      overheadClip: 'Ролик',
+      overheadPhotos: 'Фото приседа',
+      overheadClip: 'Ролик приседа',
       overheadFrontPhoto: 'Фото спереди',
       overheadSidePhoto: 'Фото сбоку',
       overheadMany: 'Отметь, откуда снят каждый присед. Углы не усредняю.',
@@ -609,6 +644,8 @@ export const dict: Record<Locale, Dict> = {
       overheadFlagArmsShort: 'Рука над головой сгибается. Дотянуться до руля может мешать плечо, не только длина выноса.',
       overheadFlagHip: 'Бёдра в нижней точке почти прямые — присед не дошёл. Вывод по глубине пока слабый.',
       stackTitle: 'Итог',
+      stackSitter: 'Этот итог для {who}.',
+      stackBody: 'Запас тела в этом итоге уже учтён. В кабинет он попадает только по сохранению.',
       rulesTitle: 'Как читать цифры',
       ruleAngle: 'Число с кадра остаётся как есть.',
       ruleBike: 'Размер велосипеда меняет совет, только если угол уже не в своей норме.',
@@ -818,6 +855,7 @@ export const dict: Record<Locale, Dict> = {
       saveReading: 'Сохранить в кабинет',
       pickBike: 'К какому велосипеду',
       error: 'Не получилось сохранить. Проверь числа и попробуй ещё раз.',
+      database: 'База не подключена. Вход и сохранение без неё не работают.',
       limit: 'Лимит уже заполнен.',
       taken: 'Этот вход уже привязан к другому кабинету.',
       noEmail: 'Почта не пришла от входа',
@@ -976,7 +1014,9 @@ export const dict: Record<Locale, Dict> = {
       videoLong: 'Longer than a minute: the first minute is read.',
       videoMinute: 'Longer than half a minute: the clip is read up to a minute, with frames a little further apart.',
       fitLead: 'The overhead squat at the bottom is separate. It does not rewrite the position angles.',
-      sourcePick: 'A clip or two photos. One is enough.',
+      sourceNone: 'Nothing is selected. Press a clip or two photos.',
+      sourceFilm: 'The clip is what we count.',
+      sourcePhotos: 'The two photos are what we count.',
       askFit: 'The bike comes first. It changes the words, not a table of ideal degrees.',
       fitNotes: {
         city: 'City bike. The back range starts at 40°, not 35°. Knee, arm and hip stay put.',
@@ -1002,6 +1042,8 @@ export const dict: Record<Locale, Dict> = {
       backEasy: 'A more upright torso is ordinary on this bike.',
       backRace: 'A low torso is expected on a low road bike. Stem length is still a visit.',
       armGrips: 'On grips a straight arm loads the wrist differently than on the hoods. Bar height is a visit.',
+      backTops: 'The hands are on the tops. In this frame the torso sits higher than the position the drop bar is set for.',
+      armTops: 'The hands are on the tops, so the reach is shorter than on the hoods or in the drops. The arm bend belongs to that grip.',
       crankMark: 'Two clicks on this frame: the bottom-bracket centre first, then the pedal axle.',
       crankStep: 'In the picture the saddle would move {mm} mm. That is one step, not the final height.',
       crankNeed: 'Millimetres appear once the bike has a crank length. Then two clicks on the lower photo: the bottom-bracket centre and the pedal axle.',
@@ -1013,6 +1055,18 @@ export const dict: Record<Locale, Dict> = {
       bikeSkip: 'No bike',
       bodyTitle: 'What your body can do',
       bodyHint: 'A tap sticks. “Easy” and “I can reach” keep the usual target. “With effort” and “I can’t” shift it. The degree from the clip is not rewritten.',
+      sitterLead: 'Who is on this reading',
+      sitterMe: 'Me',
+      sitterOther: 'Someone else',
+      sitterName: 'Name',
+      sitterHeight: 'Height, cm',
+      sitterMine: 'Your height stays in the account, under measurements. It is not written here and it does not change the degrees.',
+      sitterOtherNote: 'The name and height stay with this reading. The account and your measurements stay as they are. Height is not turned into a degree.',
+      sitterBody: 'What this person can do. Easy and “I can reach” leave the target. “With effort” and “I can’t” move it. The degree from the frame stays.',
+      sitterIn: 'In the result. The “{angle}” target stays {min}–{max}°.',
+      sitterMoved: 'In the result. The “{angle}” target is now {min}–{max}°.',
+      sitterSpeaks: 'In the result. The “{angle}” advice now comes from this answer. The number stays {value}°.',
+      sitterWait: 'Chosen. It shows in the result once this angle is on the frame.',
       gradeOn: 'Selected',
       gradeHold: 'Usual target.',
       gradeShift: 'Target shifted.',
@@ -1051,8 +1105,8 @@ export const dict: Record<Locale, Dict> = {
         'From the side: the whole person, squat to the lowest point.',
         'A clip up to a minute, or two photos: one from the front and one from the side, at the bottom.',
       ],
-      overheadPhotos: 'Two photos',
-      overheadClip: 'Clip',
+      overheadPhotos: 'Squat photos',
+      overheadClip: 'Squat clip',
       overheadFrontPhoto: 'Front photo',
       overheadSidePhoto: 'Side photo',
       overheadMany: 'Mark where each squat was filmed. Angles are not averaged.',
@@ -1081,6 +1135,8 @@ export const dict: Record<Locale, Dict> = {
       overheadFlagArmsShort: 'An arm bends overhead. Reaching the bar may be the shoulder, not only stem length.',
       overheadFlagHip: 'The hips stay nearly straight at the bottom — the squat did not get there. The depth reading is still weak.',
       stackTitle: 'Result',
+      stackSitter: 'This result is for {who}.',
+      stackBody: 'What the body can do is already in this result. It reaches the account only when you save.',
       rulesTitle: 'How to read the numbers',
       ruleAngle: 'The number from the frame stays as it is.',
       ruleBike: 'Bike size changes the advice only when an angle is already outside its range.',
@@ -1290,6 +1346,7 @@ export const dict: Record<Locale, Dict> = {
       saveReading: 'Save to account',
       pickBike: 'Which bike',
       error: 'Could not save. Check the numbers and try again.',
+      database: 'The database is not connected. Sign-in and saving do not work without it.',
       limit: 'The limit is already full.',
       taken: 'This sign-in is already linked to another account.',
       noEmail: 'No email came from sign-in',

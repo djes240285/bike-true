@@ -221,11 +221,14 @@ export function angleVoice(
   fit: FitId | null,
   hands: 'hoods' | 'drops' | 'tops' | 'grips' | null,
   holdKnee: boolean,
-): 'held' | 'back-easy' | 'back-race' | 'arm-grips' | null {
+): 'held' | 'back-easy' | 'back-race' | 'back-tops' | 'arm-grips' | 'arm-tops' | null {
+  const dropBar = fit === 'endurance' || fit === 'race' || fit === 'gravel';
   if (key === 'knee' && holdKnee) return 'held';
   if (key === 'back' && zone === 'high' && (fit === 'mtb' || fit === 'city' || fit === 'gravel')) return 'back-easy';
   if (key === 'back' && zone === 'low' && fit === 'race') return 'back-race';
+  if (key === 'back' && hands === 'tops' && dropBar && zone !== 'low') return 'back-tops';
   if (key === 'arm' && zone === 'high' && hands === 'grips') return 'arm-grips';
+  if (key === 'arm' && hands === 'tops' && dropBar && zone !== 'high') return 'arm-tops';
   return null;
 }
 

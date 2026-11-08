@@ -60,11 +60,12 @@ type ReadingRow = {
   saddle_mm: number | null;
   stem_mm: number | null;
   drop_mm: number | null;
+  sitter_name?: string | null;
   created_at?: string;
   user_name?: string;
 };
 
-type Session = { state: 'loading' } | { state: 'out' } | { state: 'in'; me: Me } | { state: 'error' };
+type Session = { state: 'loading' } | { state: 'out' } | { state: 'in'; me: Me } | { state: 'error' } | { state: 'database' };
 
 const ANGLES: Angle[] = ['knee', 'back', 'arm', 'hip'];
 const PROVIDER_NAMES: Record<Locale, Record<Provider, string>> = {
@@ -230,6 +231,7 @@ function Home({ locale, session, reload }: { locale: Locale; session: Session; r
   }, [me?.name]);
 
   if (session.state === 'loading') return <Wheel label={t.cabinetLoading} />;
+  if (session.state === 'database') return <p className="warn" role="alert">{t.database}</p>;
   if (session.state === 'error') return <p className="warn" role="alert">{t.error}</p>;
 
   if (!me) {
@@ -556,15 +558,17 @@ function Bikes({ locale }: { locale: Locale }) {
     <>
       {list && list.length === 0 && <p className="note">{t.empty}</p>}
       {list && list.length > 0 && (
-        <ul>
+        <ul className="bike-list">
           {list.map((bike) => (
-            <li key={bike.id}>
-              <button className="button ghost" type="button" onClick={() => edit(bike)}>{bike.name}</button>
-              {' · '}
-              {t[bike.fit]}
-              {' · '}
-              {[bike.crank_mm, bike.saddle_mm, bike.stem_mm, bike.drop_mm].map((v) => (v === null ? '—' : v)).join(' / ')}
-              {' '}
+            <li key={bike.id} className="bike-item">
+              <button className="bike-open" type="button" onClick={() => edit(bike)}>
+                <strong>{bike.name}</strong>
+                <span>
+                  {t[bike.fit]}
+                  {' · '}
+                  {[bike.crank_mm, bike.saddle_mm, bike.stem_mm, bike.drop_mm].map((v) => (v === null ? '—' : v)).join(' / ')}
+                </span>
+              </button>
               <button className="button ghost" type="button" onClick={() => remove(bike.id)}>{t.remove}</button>
             </li>
           ))}
@@ -668,6 +672,7 @@ function ReadingDetail({ locale, row, setup }: { locale: Locale; row: ReadingRow
         <p className="reading-meta">
           {t.rider}: {setup.rider ? t[setup.rider] : t.readingMissing}
           {' · '}
+          {open.sitter_name ? `${open.sitter_name} · ` : ''}
           {t.height}: {setup.heightCm === null ? t.readingMissing : `${setup.heightCm} ${locale === 'ru' ? 'см' : 'cm'}`}
           {' · '}
           {t.inseam}: {setup.inseamCm === null ? t.readingMissing : `${setup.inseamCm} ${locale === 'ru' ? 'см' : 'cm'}`}
@@ -735,6 +740,7 @@ function ReadingList({
         <li key={row.id} className="reading-item">
           <button className="reading-open" type="button" onClick={() => setOpenId(row.id)}>
             <strong>
+              {row.sitter_name ? `${row.sitter_name} · ` : ''}
               {row.user_name ? `${row.user_name} · ` : ''}
               {readingDate(locale, row.created_at)}
               {readingDate(locale, row.created_at) ? ' · ' : ''}
@@ -853,7 +859,11 @@ export default function Cabinet({ locale, screen }: { locale: Locale; screen: Sc
         setSession({ state: 'out' });
         return;
       }
-      const data = await readJson<Me>(res);
+      const data = await readJson<Me & { error?: string }>(res);
+      if (data?.error === 'database') {
+        setSession({ state: 'database' });
+        return;
+      }
       if (res.ok && data) {
         setSession({ state: 'in', me: data });
         if (data.profile?.rider) chooseRider(data.profile.rider);
@@ -882,6 +892,7 @@ export default function Cabinet({ locale, screen }: { locale: Locale; screen: Sc
       return <p className="lead"><a href={pathFor(locale, '/account')}>{session.me.name}</a></p>;
     }
     if (session.state === 'loading') return <Wheel label={t.cabinetLoading} />;
+    if (session.state === 'database') return <p className="warn" role="alert">{t.database}</p>;
     const asked = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('next') : null;
     const next = asked ? cabinetNext(asked) : pathFor(locale, '/account');
     return <Providers locale={locale} next={next} />;
@@ -897,11 +908,11 @@ export default function Cabinet({ locale, screen }: { locale: Locale; screen: Sc
   }
 
   if (session.state === 'loading') return shell(<><CabinetBar locale={locale} screen={screen} fitter={false} /><Wheel label={t.cabinetLoading} /></>);
-  if (session.state === 'error') {
+  if (session.state === 'error' || session.state === 'database') {
     return shell(
       <>
         {bar}
-        <p className="warn" role="alert">{t.error}</p>
+        <p className="warn" role="alert">{session.state === 'database' ? t.database : t.error}</p>
       </>,
     );
   }

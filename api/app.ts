@@ -79,6 +79,29 @@ function text(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
 
+function databaseDown(error: unknown): boolean {
+  const seen = new Set<unknown>();
+  let current: unknown = error;
+  while (current && typeof current === 'object' && !seen.has(current)) {
+    seen.add(current);
+    const record = current as { code?: unknown; message?: unknown; cause?: unknown };
+    const code = typeof record.code === 'string' ? record.code : '';
+    const message = typeof record.message === 'string' ? record.message : '';
+    if (
+      code === 'ECONNREFUSED'
+      || code === 'ENOTFOUND'
+      || code === 'ETIMEDOUT'
+      || code === 'ECONNRESET'
+      || code === 'PROTOCOL_CONNECTION_LOST'
+      || message.includes('ECONNREFUSED')
+      || message.includes('Failed to connect')
+      || message.includes('DATABASE_URL is empty')
+    ) return true;
+    current = record.cause;
+  }
+  return false;
+}
+
 function positiveId(raw: string): number | null {
   if (!/^[1-9]\d*$/.test(raw)) return null;
   const id = Number(raw);
@@ -104,6 +127,7 @@ function readingJson(row: {
   saddleMm: number | null;
   stemMm: number | null;
   dropMm: number | null;
+  sitterName: string | null;
   createdAt: Date;
 }) {
   return {
@@ -124,6 +148,7 @@ function readingJson(row: {
     saddle_mm: row.saddleMm,
     stem_mm: row.stemMm,
     drop_mm: row.dropMm,
+    sitter_name: row.sitterName,
     created_at: row.createdAt.toISOString(),
   };
 }
@@ -199,6 +224,9 @@ export function createApp() {
 
   app.onError((error, c) => {
     console.error(error);
+    if (databaseDown(error)) {
+      return c.json({ ok: false, error: 'database', message: 'База не подключена.' }, 503);
+    }
     return c.json({ ok: false, error: 'provider' }, 503);
   });
 
@@ -526,6 +554,7 @@ export function createApp() {
         saddleMm: readings.saddleMm,
         stemMm: readings.stemMm,
         dropMm: readings.dropMm,
+        sitterName: readings.sitterName,
         createdAt: readings.createdAt,
       })
       .from(readings)
@@ -562,7 +591,7 @@ export function createApp() {
     }
     const profileRows = await db.select().from(profiles).where(eq(profiles.userId, user.id)).limit(1);
     const profile = profileRows[0];
-    const { fit, bikeId, knee, back, arm, hip, hadTop } = parsed.reading;
+    const { fit, bikeId, knee, back, arm, hip, hadTop, forOther, heightCm, sitterName } = parsed.reading;
     await db.insert(readings).values({
       userId: user.id,
       bikeId,
@@ -573,9 +602,10 @@ export function createApp() {
       hip,
       hadTop: hadTop ? 1 : 0,
       captured: 1,
-      rider: profile?.rider ?? null,
-      heightCm: profile?.heightCm ?? null,
-      inseamCm: profile?.inseamCm ?? null,
+      rider: forOther ? null : profile?.rider ?? null,
+      heightCm: forOther ? heightCm : profile?.heightCm ?? null,
+      inseamCm: forOther ? null : profile?.inseamCm ?? null,
+      sitterName: forOther ? sitterName : null,
       crankMm: bike?.crankMm ?? null,
       saddleMm: bike?.saddleMm ?? null,
       stemMm: bike?.stemMm ?? null,
@@ -624,6 +654,7 @@ export function createApp() {
         saddleMm: readings.saddleMm,
         stemMm: readings.stemMm,
         dropMm: readings.dropMm,
+        sitterName: readings.sitterName,
         createdAt: readings.createdAt,
         userName: users.name,
       })

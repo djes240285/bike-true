@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { dict, type Locale } from '../i18n';
-import { band, CORRIDORS, type AngleKey } from '../lib/advice';
+import { band, type AngleKey } from '../lib/advice';
 import type { SavedBike } from '../lib/bike-sync';
 import type { FitId } from '../lib/fits';
-import { corridorFor, explainFactors, layerNotes, leadingNote, type BodyLayer, type Grade, type NoteCode } from '../lib/layers';
+import { corridorFor, explainFactors, layerNotes, leadingNote, type BodyLayer, type NoteCode } from '../lib/layers';
 import Factors from './Factors';
 import { crowd, footStance, LEFT, pickSide, readFrame, RIGHT, toPixels, type AngleReading, type Point } from '../lib/reading';
 import type { AnkleStance } from '../lib/foot';
@@ -27,23 +27,6 @@ const NOTE_KEY: Record<NoteCode, keyof typeof dict.ru.analyze.notes> = {
   'back-drop-flat': 'backDropFlat',
   'back-drop-up': 'backDropUp',
 };
-
-const QUESTIONS: (keyof BodyLayer)[] = ['posterior', 'hip', 'ankle', 'shoulder'];
-const GRADES: Grade[] = ['easy', 'reach', 'effort', 'cant'];
-
-function questionText(copy: typeof dict.ru.analyze, id: keyof BodyLayer): string {
-  if (id === 'posterior') return copy.bodyPosterior;
-  if (id === 'hip') return copy.bodyHip;
-  if (id === 'ankle') return copy.bodyAnkle;
-  return copy.bodyShoulder;
-}
-
-function gradeText(copy: typeof dict.ru.analyze, id: Grade): string {
-  if (id === 'easy') return copy.gradeEasy;
-  if (id === 'reach') return copy.gradeReach;
-  if (id === 'effort') return copy.gradeEffort;
-  return copy.gradeCant;
-}
 
 function seek(video: HTMLVideoElement, time: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -164,7 +147,7 @@ export default function RideFilm({
   ready,
   detect,
   onReading,
-  onLayer,
+  body = {},
   bike,
   fit = null,
   generation = 0,
@@ -173,7 +156,7 @@ export default function RideFilm({
   ready: boolean;
   detect: Detect | null;
   onReading: (reading: AngleReading, hadTop: boolean, extra: { kneeSpread: number | null; hipSpread: number | null; ankle: AnkleStance | null }) => void;
-  onLayer?: (body: BodyLayer) => void;
+  body?: BodyLayer;
   bike: SavedBike | null;
   fit?: FitId | null;
   generation?: number;
@@ -193,7 +176,6 @@ export default function RideFilm({
   const [samples, setSamples] = useState<FilmSample[]>([]);
   const [stroke, setStroke] = useState<StrokeReading | null>(null);
   const [reveal, setReveal] = useState(0);
-  const [body, setBody] = useState<BodyLayer>({});
 
   useEffect(() => {
     const video = videoRef.current;
@@ -236,7 +218,6 @@ export default function RideFilm({
     setProgress(0);
     setReveal(0);
     setSpan('full');
-    setBody({});
     setOver(false);
   }, [generation]);
 
@@ -339,10 +320,6 @@ export default function RideFilm({
     : null;
   const reading = stroke ? strokeAngles(stroke) : null;
   const notes = reading ? layerNotes(reading, bits, body) : [];
-
-  useEffect(() => {
-    onLayer?.(body);
-  }, [body, onLayer]);
   const shown = KEYS.slice(0, reveal);
   const drifting = stroke !== null && ((stroke.kneeSpread ?? 0) > 4 || (stroke.hipSpread ?? 0) > 4);
 
@@ -454,78 +431,12 @@ export default function RideFilm({
 
       {reveal >= KEYS.length && drifting ? <p className="warn">{copy.videoFloat}</p> : null}
 
-      {reveal >= KEYS.length && reading ? (
-        <>
-          <div className="body-layer">
-            <h3>{copy.bodyTitle}</h3>
-            <p>{copy.bodyHint}</p>
-            {QUESTIONS.map((question) => {
-              const picked = body[question];
-              const angleKey: AngleKey = question === 'posterior' ? 'back' : question === 'ankle' ? 'knee' : question === 'shoulder' ? 'arm' : 'hip';
-              const base = CORRIDORS[angleKey];
-              const next = corridorFor(angleKey, picked ? { [question]: picked } : null);
-              const moved = next.min !== base.min || next.max !== base.max;
-              return (
-                <div key={question} className="grade-row">
-                  <span>
-                    {questionText(copy, question)}
-                    {picked ? (
-                      <small>
-                        {moved
-                          ? copy.factorShifts
-                            .replace('{label}', questionText(copy, question))
-                            .replace('{grade}', gradeText(copy, picked))
-                            .replace('{angle}', angles[angleKey].label)
-                            .replace('{min}', String(next.min))
-                            .replace('{max}', String(next.max))
-                            .replace('{baseMin}', String(base.min))
-                            .replace('{baseMax}', String(base.max))
-                          : copy.factorHold
-                            .replace('{label}', questionText(copy, question))
-                            .replace('{grade}', gradeText(copy, picked))
-                            .replace('{angle}', angles[angleKey].label)
-                            .replace('{min}', String(next.min))
-                            .replace('{max}', String(next.max))}
-                      </small>
-                    ) : (
-                      <small>
-                        {copy.factorBodyMissing
-                          .replace('{label}', questionText(copy, question))
-                          .replace('{angle}', angles[angleKey].label)
-                          .replace('{min}', String(base.min))
-                          .replace('{max}', String(base.max))}
-                      </small>
-                    )}
-                  </span>
-                  <span className="grades">
-                    {GRADES.map((grade) => (
-                      <button
-                        key={grade}
-                        type="button"
-                        className={`button ghost${picked === grade ? ' is-on' : ''}`}
-                        aria-pressed={picked === grade}
-                        onClick={() => setBody((current) => ({
-                          ...current,
-                          [question]: current[question] === grade ? undefined : grade,
-                        }))}
-                      >
-                        {gradeText(copy, grade)}
-                      </button>
-                    ))}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          {notes.length > 0 ? (
+      {reveal >= KEYS.length && reading && notes.length > 0 ? (
             <ul className="film-notes">
               {notes.filter((code) => !KEYS.some((key) => reading && leadingNote(key, reading, bits, body) === code)).map((code) => (
                 <li key={code}>{copy.notes[NOTE_KEY[code]].replace('{mm}', String((code.startsWith('arm') ? bike?.stem_mm : code.startsWith('back-drop') ? bike?.drop_mm : bike?.crank_mm) ?? '—'))}</li>
               ))}
             </ul>
-          ) : null}
-        </>
       ) : null}
     </section>
   );

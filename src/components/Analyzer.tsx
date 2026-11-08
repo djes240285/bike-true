@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { dict, type Locale } from '../i18n';
 import { band, type AngleKey } from '../lib/advice';
-import { readReading, writeReading } from '../lib/device';
+import { readReading, readSitter, writeReading, writeSitter, type SitterDraft } from '../lib/device';
 import { clearFrames, loadFrame, saveFrame } from '../lib/frames';
 import type { PersonOverhead } from '../lib/account';
 import type { SavedBike } from '../lib/bike-sync';
@@ -16,6 +16,7 @@ import RideFilm from './RideFilm';
 import Overhead from './Overhead';
 import Picture from './Picture';
 import SaveReading from './SaveReading';
+import Sitter from './Sitter';
 const WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm';
 const MODEL =
   'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
@@ -79,7 +80,8 @@ export default function Analyzer({ locale }: { locale: Locale }) {
   const [source, setSource] = useState<'film' | 'photos' | null>(
     savedReading && Object.values(savedReading.reading).some((value) => typeof value === 'number') ? 'photos' : null,
   );
-  const [layerBody, setLayerBody] = useState<BodyLayer>({});
+  const [sitter, setSitter] = useState<SitterDraft>(readSitter);
+  const layerBody = sitter.who === 'other' ? sitter.other.body : sitter.me.body;
   const [layerBike, setLayerBike] = useState<SavedBike | null>(null);
   const [personOverhead, setPersonOverhead] = useState<PersonOverhead | null>(null);
   const [fitChoice, setFitChoice] = useState<FitId | null>(null);
@@ -91,10 +93,14 @@ export default function Analyzer({ locale }: { locale: Locale }) {
   const [marks, setMarks] = useState<Point[]>([]);
   const [epoch, setEpoch] = useState(0);
   const [hadTop, setHadTop] = useState(savedReading?.hadTop ?? false);
-  const onLayer = useCallback((body: BodyLayer) => setLayerBody(body), []);
   const onBike = useCallback((bike: SavedBike | null) => setLayerBike(bike), []);
   const onPerson = useCallback((card: PersonOverhead | null) => setPersonOverhead(card), []);
   const fitTouched = useRef(false);
+  const pass = useRef(0);
+  useEffect(() => {
+    writeSitter(sitter);
+  }, [sitter]);
+
   useEffect(() => {
     if (fitTouched.current || !layerBike) return;
     setFitChoice(layerBike.fit);
@@ -137,12 +143,13 @@ export default function Analyzer({ locale }: { locale: Locale }) {
   useEffect(() => {
     if (loading || !landmarker.current) return;
     let cancelled = false;
+    const mine = pass.current;
     void (async () => {
       try {
         const [bottomBlob, topBlob] = await Promise.all([loadFrame('bottom'), loadFrame('top')]);
-        if (cancelled || !landmarker.current) return;
+        if (cancelled || mine !== pass.current || !landmarker.current) return;
         if (bottomBlob) await measureRef.current('bottom', bottomBlob, false);
-        if (!cancelled && topBlob) await measureRef.current('top', topBlob, false);
+        if (!cancelled && mine === pass.current && topBlob) await measureRef.current('top', topBlob, false);
       } catch {
         /* angles already restored */
       }
@@ -153,9 +160,11 @@ export default function Analyzer({ locale }: { locale: Locale }) {
   }, [loading]);
 
   async function measure(frame: Frame, file: Blob, persist: boolean) {
+    const mine = pass.current;
     if (!landmarker.current) return;
     const setStatus = frame === 'bottom' ? setBottom : setTop;
     const setScene = frame === 'bottom' ? setBottomScene : setTopScene;
+    const live = () => mine === pass.current;
     setStatus('busy');
     setScene((previous) => {
       previous?.image.close();
@@ -165,7 +174,11 @@ export default function Analyzer({ locale }: { locale: Locale }) {
     try {
       image = await createImageBitmap(file);
     } catch {
-      setStatus('retake');
+      if (live()) setStatus('retake');
+      return;
+    }
+    if (!live()) {
+      image.close();
       return;
     }
     const canvas = document.createElement('canvas');
@@ -177,7 +190,11 @@ export default function Analyzer({ locale }: { locale: Locale }) {
       result = landmarker.current.detect(canvas);
     } catch {
       image.close();
-      setStatus('retake');
+      if (live()) setStatus('retake');
+      return;
+    }
+    if (!live()) {
+      image.close();
       return;
     }
     const poses = (result.landmarks ?? []) as Point[][];
@@ -201,6 +218,10 @@ export default function Analyzer({ locale }: { locale: Locale }) {
       setStatus('retake');
       return;
     }
+    if (!live()) {
+      image.close();
+      return;
+    }
     const bands = poseBands(layerBody, fitChoice);
     const ideal = frame === 'bottom' ? idealBottom(current, bands) : idealTop(current, bands);
     setScene({ image, current, ideal, changed: moved(current, ideal, image.width / 200) });
@@ -208,7 +229,7 @@ export default function Analyzer({ locale }: { locale: Locale }) {
     if (frame === 'bottom') setPhotoAnkle(footStance(pixels));
     if (frame === 'top') setHadTop(true);
     setStatus('done');
-    if (!persist) return;
+    if (!persist || !live()) return;
     try {
       await saveFrame(frame, file);
     } catch {
@@ -232,14 +253,13 @@ export default function Analyzer({ locale }: { locale: Locale }) {
   }, [layerBody, fitChoice]);
 
   function reset() {
+    pass.current += 1;
     setReading(emptyReading);
     setFilm(null);
-    setSource(null);
     setSpread(null);
     setPhotoAnkle(null);
     setFilmAnkle(null);
     setMarks([]);
-    setLayerBody({});
     setPersonOverhead(null);
     setHadTop(false);
     setBottom('empty');
@@ -301,6 +321,7 @@ export default function Analyzer({ locale }: { locale: Locale }) {
             <div className="analyzer-foot">
               <div className="actions">
                 <a className="button" href={pathFor(locale, '/visit')}>{t.analyze.toVisit}</a>
+                <button className="button ghost" type="button" onClick={reset}>{t.analyze.reset}</button>
               </div>
             </div>
           </>
@@ -320,6 +341,7 @@ export default function Analyzer({ locale }: { locale: Locale }) {
         overhead={personOverhead}
         fit={fitChoice}
         canSave={canSave}
+        sitter={sitter}
       />
       {loading ? <p className="muted loading-line">{t.analyze.loading}</p> : null}
       <p className="fit-lead">{t.analyze.fitLead}</p>
@@ -360,8 +382,11 @@ export default function Analyzer({ locale }: { locale: Locale }) {
           ))}
         </div>
       </section>
-      <p className="fit-lead">{t.analyze.sourcePick}</p>
-      <div className="ask-row" role="group" aria-label={t.analyze.sourcePick}>
+      <Sitter locale={locale} draft={sitter} reading={filmReading ?? photoReading} fit={fitChoice} onChange={setSitter} />
+      <p className="fit-lead" role="status">
+        {source === 'film' ? t.analyze.sourceFilm : source === 'photos' ? t.analyze.sourcePhotos : t.analyze.sourceNone}
+      </p>
+      <div className="ask-row source-pick" role="group" aria-label={t.analyze.sourceNone}>
         <button className={`button ghost${source === 'film' ? ' is-on' : ''}`} type="button" aria-pressed={source === 'film'} onClick={() => setSource('film')}>
           {t.analyze.videoTitle}
         </button>
@@ -380,7 +405,7 @@ export default function Analyzer({ locale }: { locale: Locale }) {
             setFilmAnkle(extra.ankle);
             if (top) setHadTop(true);
           }}
-          onLayer={onLayer}
+          body={layerBody}
           bike={layerBike}
           fit={fitChoice}
           generation={epoch}
@@ -439,6 +464,7 @@ export default function Analyzer({ locale }: { locale: Locale }) {
         saddleStep={photosOn ? saddleStep : null}
         ruler={photosOn}
         spread={spread}
+        who={sitter.who === 'other' ? [sitter.other.name.trim(), sitter.other.height ? `${sitter.other.height} ${locale === 'en' ? 'cm' : 'см'}` : ''].filter(Boolean).join(', ') : ''}
       />
       <Overhead
         locale={locale}
@@ -660,7 +686,11 @@ function AngleList({
               ? copy.backRace
               : voice === 'arm-grips'
                 ? copy.armGrips
-                : t.advice[key][zone];
+                : voice === 'back-tops'
+                  ? copy.backTops
+                  : voice === 'arm-tops'
+                    ? copy.armTops
+                    : t.advice[key][zone];
         return (
           <article key={key} className={`readout ${zone}`}>
             <b>{value.toFixed(0)}°</b>

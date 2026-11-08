@@ -1,6 +1,8 @@
+import type { BodyLayer, Grade } from './layers';
 import type { AngleReading } from './reading';
 
 export const READING_KEY = 'biketrue.reading';
+export const SITTER_KEY = 'biketrue.sitter';
 export const VISIT_KEY = 'biketrue.visit';
 export const NOTICE_KEY = 'biketrue.notice';
 export const INSTALL_KEY = 'biketrue.install';
@@ -87,6 +89,76 @@ export function writeReading(reading: AngleReading, hadTop: boolean) {
       return;
     }
     localStorage.setItem(READING_KEY, JSON.stringify({ ...reading, hadTopPhoto: hadTop }));
+  } catch {
+    /* private mode */
+  }
+}
+
+export type SitterWho = 'me' | 'other';
+
+export type SitterSlot = {
+  name: string;
+  height: string;
+  body: BodyLayer;
+};
+
+export type SitterDraft = {
+  who: SitterWho;
+  me: SitterSlot;
+  other: SitterSlot;
+};
+
+const GRADES: Grade[] = ['easy', 'reach', 'effort', 'cant'];
+
+function emptySlot(): SitterSlot {
+  return { name: '', height: '', body: {} };
+}
+
+function readSlot(value: unknown): SitterSlot {
+  if (!value || typeof value !== 'object') return emptySlot();
+  const record = value as Record<string, unknown>;
+  const name = typeof record.name === 'string' ? record.name.slice(0, 40) : '';
+  const height = typeof record.height === 'string' && /^\d{0,3}$/.test(record.height) ? record.height : '';
+  const source = record.body && typeof record.body === 'object' ? record.body as Record<string, unknown> : {};
+  const body: BodyLayer = {};
+  for (const key of ['posterior', 'hip', 'ankle', 'shoulder'] as const) {
+    const grade = source[key];
+    if (typeof grade === 'string' && GRADES.includes(grade as Grade)) body[key] = grade as Grade;
+  }
+  return { name, height, body };
+}
+
+export function emptySitter(): SitterDraft {
+  return { who: 'me', me: emptySlot(), other: emptySlot() };
+}
+
+export function readSitter(): SitterDraft {
+  try {
+    const raw = localStorage.getItem(SITTER_KEY);
+    if (!raw) return emptySitter();
+    const value = JSON.parse(raw) as Record<string, unknown>;
+    return {
+      who: value.who === 'other' ? 'other' : 'me',
+      me: readSlot(value.me),
+      other: readSlot(value.other),
+    };
+  } catch {
+    return emptySitter();
+  }
+}
+
+export function writeSitter(draft: SitterDraft) {
+  try {
+    const blank = draft.who === 'me'
+      && !Object.keys(draft.me.body).length
+      && !draft.other.name
+      && !draft.other.height
+      && !Object.keys(draft.other.body).length;
+    if (blank) {
+      localStorage.removeItem(SITTER_KEY);
+      return;
+    }
+    localStorage.setItem(SITTER_KEY, JSON.stringify(draft));
   } catch {
     /* private mode */
   }

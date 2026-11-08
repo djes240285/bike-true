@@ -1,5 +1,5 @@
 import { dict, type Locale } from '../i18n';
-import { band, type AngleKey } from '../lib/advice';
+import { band, CORRIDORS, type AngleKey } from '../lib/advice';
 import type { SavedBike } from '../lib/bike-sync';
 import type { FitId } from '../lib/fits';
 import type { AnkleStance } from '../lib/foot';
@@ -44,6 +44,7 @@ export default function Picture({
   saddleStep,
   ruler = false,
   spread,
+  who = '',
 }: {
   locale: Locale;
   photo: AngleReading;
@@ -57,6 +58,7 @@ export default function Picture({
   saddleStep: number | null;
   ruler?: boolean;
   spread: { knee: number | null; hip: number | null } | null;
+  who?: string;
 }) {
   const copy = dict[locale].analyze;
   const angles = dict[locale].angles;
@@ -81,6 +83,8 @@ export default function Picture({
       {hasNumber || ankleLine || crankLine ? (
         <div className="picture-result">
           <h2>{copy.stackTitle}</h2>
+          {who ? <p>{copy.stackSitter.replace('{who}', who)}</p> : null}
+          {bodyOn ? <p>{copy.stackBody}</p> : null}
       {KEYS.map((key) => {
         const photoValue = photo[key];
         const filmValue = film?.[key] ?? null;
@@ -92,6 +96,12 @@ export default function Picture({
         const zone = band(value, corridor.min, corridor.max);
         const lead = leadingNote(key, { ...source, [key]: value }, bikeBits, body);
         const voice = angleVoice(key, zone, fit, hands, holdKnee);
+        const fromBody = corridor.min !== CORRIDORS[key].min
+          || corridor.max !== CORRIDORS[key].max
+          || lead === 'back-posterior'
+          || lead === 'hip-flex'
+          || lead === 'knee-ankle'
+          || lead === 'arm-shoulder';
         const sentence = voice === 'held'
           ? copy.saddleHeld
           : voice === 'back-easy'
@@ -100,7 +110,11 @@ export default function Picture({
               ? copy.backRace
               : voice === 'arm-grips'
                 ? copy.armGrips
-                : lead
+                : voice === 'back-tops'
+                  ? copy.backTops
+                  : voice === 'arm-tops'
+                    ? copy.armTops
+                    : lead
                   ? copy.notes[NOTE_KEY[lead]].replace('{mm}', fill(lead, bike))
                   : advice[key][zone];
         let line = `${filmValue !== null ? copy.stackFilm : copy.stackPhoto} ${Math.round(value)}°`;
@@ -112,7 +126,7 @@ export default function Picture({
             .replace('{b}', String(Math.round(filmValue)));
         }
         return (
-          <article key={key} className={`picture-row${split ? ' is-split' : ''}`}>
+          <article key={key} className={`picture-row${split ? ' is-split' : ''}${fromBody ? ' is-applied' : ''}`}>
             <strong>{angles[key].label}</strong>
             <span>
               {line}

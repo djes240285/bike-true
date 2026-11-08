@@ -178,7 +178,23 @@ export function parseReading(body: unknown) {
     bikeId = bikeRaw;
   }
   const angles = ['knee', 'back', 'arm', 'hip'] as const;
-  const reading = { fit: record.fit as FitId, bikeId, knee: null as number | null, back: null as number | null, arm: null as number | null, hip: null as number | null, hadTop: record.had_top === true };
+  const forOther = record.for_other === true;
+  const heightCm = forOther ? optionalInt(record.height_cm, 90, 220) : null;
+  if (heightCm === undefined) return { ok: false as const, error: 'height' as const };
+  const rawName = forOther && typeof record.sitter_name === 'string' ? record.sitter_name.trim() : '';
+  if (rawName.length > 40) return { ok: false as const, error: 'name' as const };
+  const reading = {
+    fit: record.fit as FitId,
+    bikeId,
+    knee: null as number | null,
+    back: null as number | null,
+    arm: null as number | null,
+    hip: null as number | null,
+    hadTop: record.had_top === true,
+    forOther,
+    heightCm,
+    sitterName: rawName || null,
+  };
   for (const key of angles) {
     const value = record[key];
     if (value === null || value === undefined) continue;

@@ -98,6 +98,12 @@ describe('согласие слоёв', () => {
     expect(angleVoice('back', 'high', 'mtb', null, false)).toBe('back-easy');
     expect(angleVoice('back', 'low', 'race', null, false)).toBe('back-race');
     expect(angleVoice('arm', 'high', 'city', 'grips', false)).toBe('arm-grips');
+    expect(angleVoice('back', 'in', 'endurance', 'tops', false)).toBe('back-tops');
+    expect(angleVoice('arm', 'in', 'endurance', 'tops', false)).toBe('arm-tops');
+    expect(angleVoice('back', 'in', 'endurance', 'hoods', false)).toBeNull();
+    expect(angleVoice('back', 'low', 'endurance', 'tops', false)).toBeNull();
+    expect(angleVoice('arm', 'high', 'endurance', 'tops', false)).toBeNull();
+    expect(angleVoice('back', 'in', 'mtb', 'tops', false)).toBeNull();
     expect(angleVoice('knee', 'in', 'city', 'hoods', false)).toBeNull();
   });
 

@@ -90,7 +90,7 @@ describe('reading', () => {
     const result = parseReading({ fit: 'race', bike_id: null, knee: 145, back: null, arm: null, hip: null, had_top: false });
     expect(result).toEqual({
       ok: true,
-      reading: { fit: 'race', bikeId: null, knee: 145, back: null, arm: null, hip: null, hadTop: false },
+      reading: { fit: 'race', bikeId: null, knee: 145, back: null, arm: null, hip: null, hadTop: false, forOther: false, heightCm: null, sitterName: null },
     });
   });
 
@@ -100,6 +100,10 @@ describe('reading', () => {
     expect(parseReading({ fit: 'endurance', knee: 145, dataUrl: 'abc' })).toMatchObject({ error: 'photo' });
     expect(parseReading({ fit: 'nope', knee: 145 })).toMatchObject({ error: 'fit' });
     expect(parseReading({ fit: 'city', bike_id: 0, knee: 145 })).toMatchObject({ error: 'bike' });
+    expect(parseReading({ fit: 'endurance', knee: 170, for_other: true, height_cm: 175, sitter_name: ' Дима ' })).toMatchObject({
+      reading: { forOther: true, heightCm: 175, sitterName: 'Дима' },
+    });
+    expect(parseReading({ fit: 'endurance', knee: 170, for_other: true, height_cm: 80 })).toMatchObject({ error: 'height' });
   });
 });
 

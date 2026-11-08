@@ -78,5 +78,6 @@ export const readings = mysqlTable('readings', {
   saddleMm: int('saddle_mm'),
   stemMm: int('stem_mm'),
   dropMm: int('drop_mm'),
+  sitterName: varchar('sitter_name', { length: 40 }),
   createdAt: datetime('created_at', { mode: 'date' }).notNull(),
 });

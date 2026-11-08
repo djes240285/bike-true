@@ -4,6 +4,7 @@ import { subscribeBikes, type SavedBike } from '../lib/bike-sync';
 import { apiUrl, cabinetFetch } from '../lib/cabinet-client';
 import type { PersonOverhead } from '../lib/account';
 import type { BodyLayer } from '../lib/layers';
+import type { SitterDraft } from '../lib/device';
 import { pathFor } from '../lib/paths';
 import type { AngleReading } from '../lib/reading';
 import type { FitId } from '../lib/fits';
@@ -33,6 +34,7 @@ export default function SaveReading({
   overhead,
   fit = null,
   canSave,
+  sitter,
 }: {
   locale: Locale;
   reading: AngleReading;
@@ -42,13 +44,14 @@ export default function SaveReading({
   overhead?: PersonOverhead | null;
   fit?: FitId | null;
   canSave: boolean;
+  sitter?: SitterDraft;
 }) {
   const t = dict[locale].account;
   const enabled = apiUrl() !== '';
-  const [phase, setPhase] = useState<'loading' | 'out' | 'ready' | 'error'>(enabled ? 'loading' : 'ready');
+  const [phase, setPhase] = useState<'loading' | 'out' | 'ready' | 'error' | 'database'>(enabled ? 'loading' : 'ready');
   const [bikes, setBikes] = useState<Bike[]>([]);
   const [choice, setChoice] = useState('');
-  const [status, setStatus] = useState<'' | 'saved' | 'error' | 'limit'>('');
+  const [status, setStatus] = useState<'' | 'saved' | 'error' | 'limit' | 'database'>('');
   const [subscription, setSubscription] = useState(false);
   const [dialog, setDialog] = useState(false);
 
@@ -83,7 +86,8 @@ export default function SaveReading({
           return;
         }
         if (!me.ok) {
-          setPhase('error');
+          const problem = await readJson<{ error?: string }>(me);
+          setPhase(problem?.error === 'database' ? 'database' : 'error');
           return;
         }
         const res = await cabinetFetch('/bikes');
@@ -137,6 +141,7 @@ export default function SaveReading({
   }
 
   if (phase === 'loading') return null;
+  if (phase === 'database') return <p className="warn" role="alert">{t.database}</p>;
   if (phase === 'error') return canSave ? <p className="warn" role="alert">{t.error}</p> : null;
 
   async function submit(event: FormEvent) {
@@ -144,14 +149,16 @@ export default function SaveReading({
     setStatus('');
     const selected = bikes.find((bike) => String(bike.id) === choice);
     const hasAngle = [reading.knee, reading.back, reading.arm, reading.hip].some((value) => value !== null);
+    const friend = sitter?.who === 'other' ? sitter.other : null;
+    const height = friend ? Number(friend.height) : null;
     const person: Record<string, unknown> = {};
-    if (body?.posterior || body?.hip || body?.ankle || body?.shoulder) {
+    if (!friend && (body?.posterior || body?.hip || body?.ankle || body?.shoulder)) {
       person.posterior = body.posterior ?? null;
       person.hip = body.hip ?? null;
       person.ankle = body.ankle ?? null;
       person.shoulder = body.shoulder ?? null;
     }
-    if (overhead) person.overhead = overhead;
+    if (!friend && overhead) person.overhead = overhead;
     try {
       if (hasAngle) {
         const payload = {
@@ -162,18 +169,24 @@ export default function SaveReading({
           arm: round(reading.arm),
           hip: round(reading.hip),
           had_top: hadTop,
+          ...(friend ? {
+            for_other: true,
+            height_cm: height !== null && height >= 90 && height <= 220 ? height : null,
+            sitter_name: friend.name.trim(),
+          } : {}),
         };
         const res = await cabinetFetch('/readings', { method: 'POST', body: JSON.stringify(payload) });
         if (!res.ok) {
           const data = await readJson<{ error?: string }>(res);
-          setStatus(data?.error === 'limit' ? 'limit' : 'error');
+          setStatus(data?.error === 'limit' ? 'limit' : data?.error === 'database' ? 'database' : 'error');
           return;
         }
       }
       if (Object.keys(person).length > 0) {
         const res = await cabinetFetch('/person', { method: 'PUT', body: JSON.stringify(person) });
         if (!res.ok) {
-          setStatus('error');
+          const data = await readJson<{ error?: string }>(res);
+          setStatus(data?.error === 'database' ? 'database' : 'error');
           return;
         }
       }
@@ -194,7 +207,7 @@ export default function SaveReading({
       <BikeGlyph />
       <Pick compact label={t.pickBike} value={choice} options={options} onChange={setChoice} />
       {status === 'saved' ? <span className="bike-dock-status" role="status">{t.saved}</span> : null}
-      {status === 'error' || status === 'limit' ? <span className="bike-dock-status is-warn" role="alert">{status === 'limit' ? t.limit : t.error}</span> : null}
+      {status === 'error' || status === 'limit' || status === 'database' ? <span className="bike-dock-status is-warn" role="alert">{status === 'limit' ? t.limit : status === 'database' ? t.database : t.error}</span> : null}
       {subscription ? (
         <button className="bike-dock-icon" type="button" aria-label={dict[locale].analyze.addBike} onClick={() => setDialog(true)}>
           <PlusGlyph />
